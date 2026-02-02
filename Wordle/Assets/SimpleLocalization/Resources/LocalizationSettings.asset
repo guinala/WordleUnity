@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63817d93022759543b57e795c78efe11, type: 3}
+  m_Name: LocalizationSettings
+  m_EditorClassIdentifier: Assembly-CSharp::Assets.SimpleLocalization.Scripts.LocalizationSettings
+  TableId: 12Z2FM5ujpvb7KnAJXvnH-GpWCn90qLTJVBvpfKezx38
+  Sheets:
+  - Name: Menu
+    Id: 0
+    TextAsset: {fileID: 4900000, guid: cf55c05861a4d264a855e6349bef560e, type: 3}
+  - Name: Settings
+    Id: 1640259395
+    TextAsset: {fileID: 4900000, guid: 70db6840efc0bd249922c3532f1ea8c8, type: 3}
+  - Name: Gameplay
+    Id: 1148433627
+    TextAsset: {fileID: 4900000, guid: 7736d4c911e650b4ca89040e71e5124c, type: 3}
+  - Name: Level
+    Id: 939598035
+    TextAsset: {fileID: 4900000, guid: c88c2c4b30063194c82a7f7748046df2, type: 3}
+  - Name: GameOver
+    Id: 1491698020
+    TextAsset: {fileID: 4900000, guid: a54bc58dce1885747a660a9436127c2f, type: 3}
+  SaveFolder: {fileID: 102900000, guid: c392831e85f928548b8494fefd912562, type: 3}

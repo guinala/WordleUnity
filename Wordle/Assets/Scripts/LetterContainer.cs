@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 
@@ -7,6 +8,9 @@ public class LetterContainer : MonoBehaviour
     [SerializeField] private TextMeshPro letter;
 
     [SerializeField] private SpriteRenderer letterContainer;
+
+    [Header("Settings")] 
+    [SerializeField] private bool animatedColorChange = true;
 
     public void Initialize()
     {
@@ -33,16 +37,49 @@ public class LetterContainer : MonoBehaviour
 
     public void SetValid()
     {
-        letterContainer.color = Color.green;
+        if(!animatedColorChange) letterContainer.color = Color.yellowGreen;
+        else
+        {
+            StartCoroutine(ChangeColorRoutine(Color.yellowGreen, 0.5f));
+        }
     }
 
     public void SetPotential()
     {
-        letterContainer.color = Color.orange;
+        if(!animatedColorChange) letterContainer.color = Color.yellowNice;
+        else
+        {
+            StartCoroutine(ChangeColorRoutine(Color.yellowNice, 0.5f));
+        }
     }
     
     public void SetInvalid()
     {
-        letterContainer.color = Color.gray;
+        if(!animatedColorChange) letterContainer.color = Color.gray;
+        else
+        {
+            StartCoroutine(ChangeColorRoutine(Color.gray, 0.5f));
+        }
+    }
+    
+    private IEnumerator ChangeColorRoutine(Color desiredColor, float duration)
+    {
+        Color colorInicial = letterContainer.color;
+        float tiempoTranscurrido = 0f;
+    
+        while (tiempoTranscurrido < duration)
+        {
+            tiempoTranscurrido += Time.deltaTime;
+            float porcentaje = tiempoTranscurrido / duration;
+        
+            // Aplica una curva suave (ease in-out)
+            float curva = Mathf.SmoothStep(0f, 1f, porcentaje);
+        
+            letterContainer.color = Color.Lerp(colorInicial, desiredColor, curva);
+        
+            yield return null;
+        }
+    
+        letterContainer.color = desiredColor;
     }
 }

@@ -14,10 +14,15 @@ public class HintManager : MonoBehaviour
     [Header("Text Elements")]
     [SerializeField] private TextMeshProUGUI keyboardPriceText;
     [SerializeField] private TextMeshProUGUI letterPriceText;
+    [SerializeField] private TextMeshProUGUI textHintPriceText;
+    [SerializeField] private TextMeshProUGUI hintText;
 
     [Header("Settings")]
     [SerializeField] private int keyboardHintPrice;
     [SerializeField] private int letterHintPrice;
+    [SerializeField] private int textHintPrice;
+    [SerializeField] private bool textHintGiven;
+    
     private bool shouldReset;
 
     private void Awake()
@@ -29,6 +34,7 @@ public class HintManager : MonoBehaviour
     {
         keyboardPriceText.text = keyboardHintPrice.ToString();
         letterPriceText.text = letterHintPrice.ToString();
+        textHintPriceText.text = textHintPrice.ToString();
         GameManager.OnGameStateChanged += GameStateChangedCallback;
     }
     
@@ -47,6 +53,8 @@ public class HintManager : MonoBehaviour
             case GameState.Game:
                 if (shouldReset)
                 {
+                    textHintGiven = false;
+                    hintText.text = "";
                     letterHintGivenIndices.Clear();
                     shouldReset = false;
                 }
@@ -124,5 +132,40 @@ public class HintManager : MonoBehaviour
         currentWordContainer.AddAsHint(randomIndex, secretWord[randomIndex]);
         
         DataManager.instance.RemoveCoins(letterHintPrice);
+    }
+
+    public void ShowHintPanel()
+    {
+        UIManager.Instance.ShowHintUI();
+        Debug.Log("Actualmente la variable está en : " + textHintGiven);
+        if (!textHintGiven)
+        {
+            UIManager.Instance.ShowMainHintPanel();
+        }
+        else
+        {
+            UIManager.Instance.ShowGivenHintPanel();
+        }
+    }
+    
+    public async void TextHint()
+    {
+        if (DataManager.instance.GetCoins() < textHintPrice)
+            return;
+        
+        if (textHintGiven)
+        {
+            return;
+        }
+
+        UIManager.Instance.HideMainHintPanel();
+        UIManager.Instance.ShowLoading(true);
+        string hint = await APIManager.instance.SetAIHint();
+        hint = hint.Trim();
+        
+        UIManager.Instance.ShowGivenHintPanel();
+        hintText.text = hint;
+        
+        textHintGiven = true;
     }
 }

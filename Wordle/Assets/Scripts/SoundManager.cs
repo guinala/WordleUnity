@@ -1,9 +1,16 @@
 using System;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class SoundManager : MonoBehaviour
 {
     public static SoundManager Instance;
+    
+    [Header("Mixer")]
+    public AudioMixer mainMixer;
+    private const string MIXER_MASTER = "MasterVolume";
+    private const string MIXER_MUSIC = "MusicVolume";
+    private const string MIXER_SFX = "SFXVolume";
     
     [Header("Sounds")]
     [SerializeField] private AudioSource buttonSound;
@@ -67,21 +74,26 @@ public class SoundManager : MonoBehaviour
         letterRemovedSound.Play();
     }
 
-    public void EnableSounds()
+    public void SetMasterVolume(float volume)
     {
-        buttonSound.volume = 1;
-        letterAddedSound.volume = 1;
-        letterRemovedSound.volume = 1;
-        levelCompletedSound.volume = 1;
-        gameOverSound.volume = 1;
+        mainMixer.SetFloat(MIXER_MASTER, ConvertToDecibel(volume));
     }
-
-    public void DisableSounds()
+    
+    public void SetMusicVolume(float volume)
     {
-        buttonSound.volume = 0;
-        letterAddedSound.volume = 0;
-        letterRemovedSound.volume = 0;
-        levelCompletedSound.volume = 0;
-        gameOverSound.volume = 0;
+        mainMixer.SetFloat(MIXER_MUSIC, ConvertToDecibel(volume));
+    }
+    
+    public void SetSFXVolume(float volume)
+    {
+        mainMixer.SetFloat(MIXER_SFX, ConvertToDecibel(volume));
+    }
+    
+    private float ConvertToDecibel(float sliderValue)
+    {
+        // Log10(0) es infinito negativo, así que ponemos un tope mínimo (0.0001)
+        // La fórmula estándar es: log10(valor) * 20
+        sliderValue = Mathf.Clamp(sliderValue, 0.0001f, 1f);
+        return Mathf.Log10(sliderValue) * 20; 
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -32,7 +33,7 @@ public class InputManager : MonoBehaviour
 
     private void Start()
     {
-        Initialize();
+        //Initialize();
         Key.OnKeyPressed += KeyPressedCallback;
         GameManager.OnGameStateChanged += GameStateChangedCallback;
     }
@@ -62,7 +63,7 @@ public class InputManager : MonoBehaviour
         }
     }
     
-    private void Initialize()
+    public void Initialize()
     {
         currentWordContainerIndex = 0;
         canAddLetter = true;
@@ -94,10 +95,16 @@ public class InputManager : MonoBehaviour
 
     public void CheckWord()
     {
+        StartCoroutine(CheckWordRoutine());
+    }
+    
+    private IEnumerator CheckWordRoutine()
+    {
         string wordToCheck = wordContainers[currentWordContainerIndex].GetWord();
         string secretWord = WordManager.instance.GetSecretWord();
         
         wordContainers[currentWordContainerIndex].Colorize(secretWord);
+        yield return new WaitForSeconds(0.6f);
         keyboardColorizer.Colorize(secretWord, wordToCheck);
 
         if (wordToCheck == secretWord)

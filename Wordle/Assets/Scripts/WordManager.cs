@@ -9,6 +9,7 @@ public class WordManager : MonoBehaviour
     [Header("Elements")] 
     [SerializeField] private string secretWord;
     [SerializeField] private TextAsset wordsText;
+    [SerializeField] private bool generateWithAI;
     private string words;
 
     [Header("Settings")] 
@@ -27,9 +28,14 @@ public class WordManager : MonoBehaviour
 
     private void Start()
     {
-        SetNewSecretWord();
-        
+        // if(!generateWithAI)
+        //     SetNewSecretWordFromText();
+        // else
+        // {
+        //     SetNewSecretWordFromAI();
+        // }
         GameManager.OnGameStateChanged += GameStateChangedCallback;
+        shouldReset = true;
     }
 
     private void OnDestroy()
@@ -42,9 +48,8 @@ public class WordManager : MonoBehaviour
         return secretWord.ToUpper();
     }
 
-    private void SetNewSecretWord()
+    private void SetNewSecretWordFromText()
     {
-        Debug.Log("String length: " + words.Length);
         int wordCount = (words.Length + 2) / 7;
 
         int wordIndex = Random.Range(0, wordCount);
@@ -55,16 +60,41 @@ public class WordManager : MonoBehaviour
         shouldReset = false;
     }
 
+    private async void SetNewSecretWordFromAI()
+    {
+        UIManager.Instance.ShowLoading(false);
+        string word = await APIManager.instance.SetAIWord();
+        word = word.Trim();
+        Debug.Log(word);
+        if(String.IsNullOrEmpty(word) || word.Length != 5)
+        {
+            Debug.Log("No vale la pena");
+            SetNewSecretWordFromText();
+            return;
+        }
+        
+        secretWord = word.ToUpper();
+        shouldReset = false;
+    }
+
     private void GameStateChangedCallback(GameState gameState)
     {
+        Debug.Log("Cambio de estado en WordManager: " + gameState.ToString());
         switch (gameState)
         {
             case GameState.Menu:
                 break;
             
             case GameState.Game:
-                if(shouldReset)
-                    SetNewSecretWord();
+                if (shouldReset)
+                {
+                    if(!generateWithAI)
+                        SetNewSecretWordFromText();
+                    else
+                    {
+                        SetNewSecretWordFromAI();
+                    }
+                }
                 break;
             
             case GameState.LevelComplete:

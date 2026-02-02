@@ -12,6 +12,12 @@ public class UIManager : MonoBehaviour
     [SerializeField] private CanvasGroup levelComplete_canvasGroup;
     [SerializeField] private CanvasGroup gameOver_canvasGroup;
     [SerializeField] private CanvasGroup settings_canvasGroup;
+    [SerializeField] private CanvasGroup keyboard_canvasGroup;
+    [SerializeField] private CanvasGroup loading_canvasGroup;
+    [SerializeField] private CanvasGroup hint_canvasGroup;
+    [SerializeField] private CanvasGroup mainPanelHint_canvasGroup;
+    [SerializeField] private CanvasGroup givenHintPanel_canvasGroup;
+    [SerializeField] private GameObject wordsContainer;
     
     [Header("Menu Elements")]
     [SerializeField] private TextMeshProUGUI menuCoins;
@@ -31,6 +37,9 @@ public class UIManager : MonoBehaviour
     [Header("Game Elements")]
     [SerializeField] private TextMeshProUGUI gameScore;
     [SerializeField] private TextMeshProUGUI gameCoins;
+    
+    [Header("Loading Elements")]
+    [SerializeField] private TextMeshProUGUI loadingText;
 
     private void Awake()
     {
@@ -62,14 +71,17 @@ public class UIManager : MonoBehaviour
     {
         gameScore.text = DataManager.instance.GetScore().ToString();
         gameCoins.text = DataManager.instance.GetCoins().ToString();
+        wordsContainer.SetActive(true);
+        InputManager.instance.Initialize();
         ShowCanvasGroup(game_canvasGroup);
+        ShowCanvasGroup(keyboard_canvasGroup);
     }
     
     private void ShowLevelComplete()
     {
         levelCompleteCoins.text = DataManager.instance.GetCoins().ToString();
         levelCompleteScore.text = DataManager.instance.GetScore().ToString();
-        levelCompleteBestScore.text = DataManager.instance.GetBestScore().ToString();
+//        levelCompleteBestScore.text = DataManager.instance.GetBestScore().ToString();
         levelCompleteSecretWord.text = WordManager.instance.GetSecretWord();
         ShowCanvasGroup(levelComplete_canvasGroup);
     }
@@ -82,6 +94,23 @@ public class UIManager : MonoBehaviour
         ShowCanvasGroup(gameOver_canvasGroup);
     }
     
+    public void ShowLoading(bool hint)
+    {
+        string language = PlayerPrefs.GetString("Language", "Spanish");
+        if(hint)
+            loadingText.text = language == "Spanish" ? "Generando pista..." : "Generating Hint...";
+        else
+        {
+            loadingText.text = language == "Spanish" ? "Generando palabra..." : "Generating Word...";
+        }
+        ShowCanvasGroup(loading_canvasGroup);
+    }
+    
+    public void HideLoading()
+    {
+        HideCanvasGroup(loading_canvasGroup);
+    }
+    
     public void ShowSettings()
     {
         ShowCanvasGroup(settings_canvasGroup);
@@ -90,6 +119,38 @@ public class UIManager : MonoBehaviour
     public void HideSettings()
     {
         HideCanvasGroup(settings_canvasGroup);
+    }
+    
+    public void ShowHintUI()
+    {
+        ShowCanvasGroup(hint_canvasGroup);
+        HideGivenHintPanel();
+        HideMainHintPanel();
+    }
+    
+    public void HideHintUI()
+    {
+        HideCanvasGroup(hint_canvasGroup);
+    }
+    
+    public void ShowMainHintPanel()
+    {
+        ShowCanvasGroup(mainPanelHint_canvasGroup);
+    }
+    
+    public void HideMainHintPanel()
+    {
+        HideCanvasGroup(mainPanelHint_canvasGroup);
+    }
+    
+    public void ShowGivenHintPanel()
+    {
+        ShowCanvasGroup(givenHintPanel_canvasGroup);
+    }
+    
+    public void HideGivenHintPanel()
+    {
+        HideCanvasGroup(givenHintPanel_canvasGroup);
     }
 
     private void GameStateChangedCallback(GameState gameState)
@@ -132,7 +193,9 @@ public class UIManager : MonoBehaviour
     {
         menuCoins.text = DataManager.instance.GetCoins().ToString();
         menuBestScore.text = DataManager.instance.GetBestScore().ToString();
+        wordsContainer.SetActive(false);
         ShowCanvasGroup(menu_canvasGroup);
+        HideCanvasGroup(keyboard_canvasGroup);
     }
     
     private void HideMenu()
@@ -142,6 +205,8 @@ public class UIManager : MonoBehaviour
     
     private void HideGame()
     {
+        wordsContainer.SetActive(false);
+        HideCanvasGroup(keyboard_canvasGroup);
         HideCanvasGroup(game_canvasGroup);
     }
     
