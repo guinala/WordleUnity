@@ -43,7 +43,7 @@ public class KeyboardColorizer : MonoBehaviour
         }
     }
 
-    private void Initialize()
+    public void Initialize()
     {
         for(int i = 0; i < _keys.Length; i++)
         {

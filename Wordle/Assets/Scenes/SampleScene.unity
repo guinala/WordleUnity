@@ -4493,7 +4493,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -21.225891, y: 0}
+  m_AnchoredPosition: {x: -21.22583, y: 0}
   m_SizeDelta: {x: 253.6482, y: 33.1}
   m_Pivot: {x: 1, y: 0}
 --- !u!114 &349300369
@@ -8020,7 +8020,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2404a37f3bd75444aa4ad05d0f228347, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Assets.SimpleLocalization.Scripts.LocalizedText
-  LocalizationKey: Settings.Music
+  LocalizationKey: Settings.MusicVolume
 --- !u!1 &640724455
 GameObject:
   m_ObjectHideFlags: 0
@@ -18005,7 +18005,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2404a37f3bd75444aa4ad05d0f228347, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Assets.SimpleLocalization.Scripts.LocalizedText
-  LocalizationKey: Settings.Master
+  LocalizationKey: Settings.MasterVolume
 --- !u!1 &1607825406
 GameObject:
   m_ObjectHideFlags: 0
@@ -23533,7 +23533,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &2139015640
 RectTransform:
   m_ObjectHideFlags: 0

@@ -40,7 +40,7 @@ public class Key : MonoBehaviour
     
     public void SetValid()
     {
-        renderer.color = Color.green;
+        renderer.color = Color.yellowGreen;
         _validity = Validity.Valid;
     }
     
@@ -48,7 +48,7 @@ public class Key : MonoBehaviour
     {
         if (_validity == Validity.Valid)
             return;
-        renderer.color = Color.yellow;
+        renderer.color = Color.yellowNice;
         _validity = Validity.Potential;
     }
     

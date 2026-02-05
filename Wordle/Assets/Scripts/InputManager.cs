@@ -36,12 +36,20 @@ public class InputManager : MonoBehaviour
         //Initialize();
         Key.OnKeyPressed += KeyPressedCallback;
         GameManager.OnGameStateChanged += GameStateChangedCallback;
+        GameManager.OnGameBackButtonCallback += Clear;
     }
 
     private void OnDestroy()
     {
         Key.OnKeyPressed -= KeyPressedCallback;
         GameManager.OnGameStateChanged -= GameStateChangedCallback;
+        GameManager.OnGameBackButtonCallback -= Clear;
+    }
+
+    private void Clear()
+    {
+        Initialize();
+        keyboardColorizer.Initialize();
     }
     
     private void GameStateChangedCallback(GameState gameState)

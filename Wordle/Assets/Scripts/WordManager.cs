@@ -35,12 +35,21 @@ public class WordManager : MonoBehaviour
         //     SetNewSecretWordFromAI();
         // }
         GameManager.OnGameStateChanged += GameStateChangedCallback;
+        GameManager.OnGameBackButtonCallback += ClearWords;
         shouldReset = true;
     }
 
     private void OnDestroy()
     {
         GameManager.OnGameStateChanged -= GameStateChangedCallback;
+        GameManager.OnGameBackButtonCallback -= ClearWords;
+    }
+    
+    private void ClearWords()
+    {
+        Debug.Log("Patatuelas con atun y tomate");
+        secretWord = "";
+        shouldReset = true;
     }
 
     public string GetSecretWord()

@@ -36,11 +36,13 @@ public class HintManager : MonoBehaviour
         letterPriceText.text = letterHintPrice.ToString();
         textHintPriceText.text = textHintPrice.ToString();
         GameManager.OnGameStateChanged += GameStateChangedCallback;
+        GameManager.OnGameBackButtonCallback += Clear;
     }
     
     private void OnDestroy()
     {
         GameManager.OnGameStateChanged -= GameStateChangedCallback;
+        GameManager.OnGameBackButtonCallback -= Clear;
     }
     
     private void GameStateChangedCallback(GameState gameState)
@@ -68,6 +70,12 @@ public class HintManager : MonoBehaviour
                 shouldReset = true;
                 break;
         }
+    }
+
+    private void Clear()
+    {
+        textHintGiven = false;
+        hintText.text = "";
     }
 
     public void KeyboardHint()

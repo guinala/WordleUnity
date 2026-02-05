@@ -7,7 +7,6 @@ public enum GameState
     Game,
     LevelComplete,
     GameOver,
-    Idle
 }
 
 public class GameManager : MonoBehaviour
@@ -19,6 +18,7 @@ public class GameManager : MonoBehaviour
     
     [Header("Events")]
     public static Action<GameState> OnGameStateChanged;
+    public static Action OnGameBackButtonCallback;
 
     private void Awake()
     {
@@ -48,6 +48,8 @@ public class GameManager : MonoBehaviour
     
     public void BackButtonCallback()
     {
+        Debug.Log("estado cambiado");
+        OnGameBackButtonCallback?.Invoke();
         SetGameState(GameState.Menu);
     }
 
