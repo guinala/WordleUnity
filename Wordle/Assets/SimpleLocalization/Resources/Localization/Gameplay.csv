@@ -1,3 +1,11 @@
 Key,English,Spanish
 Gameplay.Score,Score,Puntos
 Gameplay.Hint,Do you want to generate a hint?,¿Quieres generar una pista?
+Gameplay.Modifier.None,Modifier: None,Mutador: Ninguno
+Gameplay.Modifier.TemporaryKeyLock,Modifier: Locked keys,Mutador: Bloqueo temporal de teclas
+Gameplay.Modifier.EarlyHitBonus,Modifier: Early hit bonus (+4 first 2 tries, +2 third),Mutador: Bonus por acierto temprano (+4 primeras 2 rondas, +2 tercera)
+Gameplay.Modifier.TurnRestriction,Modifier: Turn restriction:,Mutador: Restricción por turno:
+Gameplay.Modifier.OnlyVowels,Use vowels only,Solo vocales
+Gameplay.Modifier.OnlyConsonants,Use consonants only,Solo consonantes
+Gameplay.Modifier.LockedKeyBlocked,Key {0} is temporarily blocked,La tecla {0} está bloqueada temporalmente
+Gameplay.Modifier.BonusAwarded,Early hit bonus applied: +{0},Bonus por acierto temprano aplicado: +{0}
