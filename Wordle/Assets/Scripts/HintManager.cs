@@ -85,6 +85,7 @@ public class HintManager : MonoBehaviour
         GameManager.OnGameStateChanged += GameStateChangedCallback;
         GameManager.OnGameBackButtonCallback += Clear;
         DataManager.OnHintUsageChanged += RefreshHintPrices;
+        AdsController.OnRewardedAdCompleted += TextHint;
     }
 
     private void OnDestroy()
