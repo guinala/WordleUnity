@@ -22,19 +22,16 @@ public class InputManager : MonoBehaviour
 
     public static InputManager instance;
 
-    [Header("Elements")]
-    [SerializeField] private WordContainer[] wordContainers;
+    [Header("Elements")] [SerializeField] private WordContainer[] wordContainers;
     [SerializeField] private Button tryButton;
     [SerializeField] private KeyboardColorizer keyboardColorizer;
     [SerializeField] private UIManager uiManager;
 
-    [Header("Settings")]
-    private int currentWordContainerIndex;
+    [Header("Settings")] private int currentWordContainerIndex;
     private bool canAddLetter = true;
     private bool shouldReset;
 
-    [Header("Timer")]
-    [SerializeField] private TimerMode timerMode = TimerMode.PerAttempt;
+    [Header("Timer")] [SerializeField] private TimerMode timerMode = TimerMode.PerAttempt;
     [SerializeField] private TimeoutBehavior timeoutBehavior = TimeoutBehavior.AutoSubmit;
     [SerializeField] private float perAttemptDuration = 30f;
     [SerializeField] private float perMatchDuration = 180f;
@@ -47,9 +44,7 @@ public class InputManager : MonoBehaviour
     private bool timerActive;
     private bool wordCheckInProgress;
 
-    [Header("Events")] 
-    [Header("Events")]
-    public static Action onLetterAdded;
+    [Header("Events")] [Header("Events")] public static Action onLetterAdded;
     public static Action onLetterRemoved;
 
     private void Awake()
@@ -135,12 +130,13 @@ public class InputManager : MonoBehaviour
         if (!canAddLetter)
             return;
 
-        if (MatchModifierManager.Instance != null && !MatchModifierManager.Instance.CanUseKey(letter, out string keyFeedback))
+        if (MatchModifierManager.Instance != null &&
+            !MatchModifierManager.Instance.CanUseKey(letter, out string keyFeedback))
         {
             ShowModifierFeedback(keyFeedback);
             return;
         }
-        
+
         wordContainers[currentWordContainerIndex].Add(letter);
 
         if (wordContainers[currentWordContainerIndex].IsComplete())
@@ -166,7 +162,8 @@ public class InputManager : MonoBehaviour
 
         string wordToCheck = wordContainers[currentWordContainerIndex].GetWord();
 
-        if (MatchModifierManager.Instance != null && !MatchModifierManager.Instance.ValidateWordForCurrentTurn(wordToCheck, out string validationFeedback))
+        if (MatchModifierManager.Instance != null &&
+            !MatchModifierManager.Instance.ValidateWordForCurrentTurn(wordToCheck, out string validationFeedback))
         {
             ShowModifierFeedback(validationFeedback);
             canAddLetter = true;
@@ -177,7 +174,7 @@ public class InputManager : MonoBehaviour
         string secretWord = WordManager.instance.GetSecretWord();
 
         DataManager.instance.RegisterAttemptTime(currentAttemptElapsed);
-        
+
         wordContainers[currentWordContainerIndex].Colorize(secretWord);
         float checkDelay = EnvironmentState.Instance.GetWordCheckDelay(0.6f);
         yield return new WaitForSeconds(checkDelay);
@@ -266,7 +263,7 @@ public class InputManager : MonoBehaviour
             if (bonus > 0)
                 ShowModifierFeedback(LocalizationManager.Localize("Gameplay.Modifier.BonusAwarded", bonus));
         }
-        
+
         DataManager.instance.IncreaseScore(scoreToAdd);
         DataManager.instance.AddCoins(scoreToAdd * 3);
         DataManager.instance.AddXp(scoreToAdd * 20);
@@ -344,7 +341,7 @@ public class InputManager : MonoBehaviour
         remainingTime = timerMode == TimerMode.PerMatch ? perMatchDuration : perAttemptDuration;
         UIManager.Instance?.UpdateCountdownUI(remainingTime, remainingTime <= criticalThreshold);
     }
-    
+
     public void BackspacePressedCallback()
     {
         if (!GameManager.Instance.IsGameState())
@@ -387,6 +384,8 @@ public class InputManager : MonoBehaviour
         }
 
         return exactLetters;
+    }
+    
     private void ShowModifierFeedback(string message)
     {
         if (string.IsNullOrEmpty(message))

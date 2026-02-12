@@ -50,6 +50,7 @@ public class DataManager : MonoBehaviour
     [Header("Events")]
     public static Action OnCoinsChanged;
     public static Action OnProgressionChanged;
+    public static Action OnHintUsageChanged;
 
     [Header("Match Hint Data")]
     private int keyboardHintUses;
@@ -58,10 +59,6 @@ public class DataManager : MonoBehaviour
     private int betHintUses;
     private int matchHintScorePenalty;
     
-    [Header("Events")]
-    public static Action OnCoinsChanged;
-    public static Action OnHintUsageChanged;
-
     private const string ChallengeResultsKey = "ChallengeResults";
     private readonly Dictionary<string, ChallengeResultData> challengeResults = new Dictionary<string, ChallengeResultData>();
 

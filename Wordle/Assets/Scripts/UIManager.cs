@@ -8,8 +8,7 @@ public class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
 
-    [Header("Elements")]
-    [SerializeField] private CanvasGroup menu_canvasGroup;
+    [Header("Elements")] [SerializeField] private CanvasGroup menu_canvasGroup;
     [SerializeField] private CanvasGroup game_canvasGroup;
     [SerializeField] private CanvasGroup levelComplete_canvasGroup;
     [SerializeField] private CanvasGroup gameOver_canvasGroup;
@@ -22,23 +21,27 @@ public class UIManager : MonoBehaviour
     [SerializeField] private CanvasGroup progression_canvasGroup;
     [SerializeField] private GameObject wordsContainer;
 
-    [Header("Menu Elements")]
-    [SerializeField] private TextMeshProUGUI menuCoins;
+    [Header("Menu Elements")] [SerializeField]
+    private TextMeshProUGUI menuCoins;
+
     [SerializeField] private TextMeshProUGUI menuBestScore;
 
-    [Header("Level Complete Elements")]
-    [SerializeField] private TextMeshProUGUI levelCompleteCoins;
+    [Header("Level Complete Elements")] [SerializeField]
+    private TextMeshProUGUI levelCompleteCoins;
+
     [SerializeField] private TextMeshProUGUI levelCompleteScore;
     [SerializeField] private TextMeshProUGUI levelCompleteSecretWord;
     [SerializeField] private TextMeshProUGUI levelCompleteBestScore;
 
-    [Header("Game Over Elements")]
-    [SerializeField] private TextMeshProUGUI gameOverCoins;
+    [Header("Game Over Elements")] [SerializeField]
+    private TextMeshProUGUI gameOverCoins;
+
     [SerializeField] private TextMeshProUGUI gameOverSecretWord;
     [SerializeField] private TextMeshProUGUI gameOverBestScore;
 
-    [Header("Game Elements")]
-    [SerializeField] private TextMeshProUGUI gameScore;
+    [Header("Game Elements")] [SerializeField]
+    private TextMeshProUGUI gameScore;
+
     [SerializeField] private TextMeshProUGUI gameCoins;
     [SerializeField] private CanvasGroup countdown_canvasGroup;
     [SerializeField] private TextMeshProUGUI countdownText;
@@ -46,29 +49,29 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Color countdownCriticalColor = Color.red;
     [SerializeField] private TextMeshProUGUI environmentStatusText;
 
-    [Header("Loading Elements")]
-    [SerializeField] private TextMeshProUGUI loadingText;
+    [Header("Loading Elements")] [SerializeField]
+    private TextMeshProUGUI loadingText;
 
-    [Header("Progression Elements")]
-    [SerializeField] private TextMeshProUGUI progressionLevelText;
+    [Header("Progression Elements")] [SerializeField]
+    private TextMeshProUGUI progressionLevelText;
     [SerializeField] private TextMeshProUGUI progressionXpText;
     [SerializeField] private TextMeshProUGUI progressionPerksText;
     [SerializeField] private TextMeshProUGUI progressionRulesText;
     [SerializeField] private TextMeshProUGUI modifierText;
     [SerializeField] private TextMeshProUGUI modifierMessageText;
-    
-    [Header("Loading Elements")]
-    [SerializeField] private TextMeshProUGUI loadingText;
 
-    [Header("Challenge Elements")]
-    [SerializeField] private TMP_InputField challengeCodeInput;
+    [Header("Challenge Elements")] [SerializeField]
+    private TMP_InputField challengeCodeInput;
+
     [SerializeField] private TextMeshProUGUI challengeFeedbackText;
     [SerializeField] private TextMeshProUGUI challengeCodeLabel;
     [SerializeField] private CanvasGroup challengeRecord_canvasGroup;
     [SerializeField] private TextMeshProUGUI challengeRecordTitle;
     [SerializeField] private TextMeshProUGUI challengeRecordStats;
-    [Header("Daily Challenge Elements")]
-    [SerializeField] private CanvasGroup dailyChallenge_canvasGroup;
+
+    [Header("Daily Challenge Elements")] [SerializeField]
+    private CanvasGroup dailyChallenge_canvasGroup;
+
     [SerializeField] private TextMeshProUGUI dailyThemeText;
     [SerializeField] private TextMeshProUGUI dailyRuleText;
 
@@ -148,7 +151,9 @@ public class UIManager : MonoBehaviour
         string language = PlayerPrefs.GetString("Language", "Spanish");
         loadingText.text = hint
             ? language == "Spanish" ? "Generando pista..." : "Generating Hint..."
-            : language == "Spanish" ? "Generando palabra..." : "Generating Word...";
+            : language == "Spanish"
+                ? "Generando palabra..."
+                : "Generating Word...";
         ShowCanvasGroup(loading_canvasGroup);
     }
 
@@ -291,6 +296,8 @@ public class UIManager : MonoBehaviour
             return;
 
         HideCanvasGroup(challengeRecord_canvasGroup);
+    }
+    
     public void ShowProgression()
     {
         UpdateProgressionUI();
@@ -303,6 +310,8 @@ public class UIManager : MonoBehaviour
         if (progression_canvasGroup != null)
             HideCanvasGroup(progression_canvasGroup);
 
+    }
+    
     public void UpdateDailyChallengeBlock(string theme, string rule, bool isActive)
     {
         if (dailyThemeText != null)
@@ -431,7 +440,7 @@ public class UIManager : MonoBehaviour
     {
         HideCanvasGroup(gameOver_canvasGroup);
     }
-    
+
     public void UpdateCountdownUI(float remainingSeconds, bool isCritical)
     {
         if (countdownText == null || countdown_canvasGroup == null)
@@ -449,6 +458,7 @@ public class UIManager : MonoBehaviour
             return;
 
         HideCanvasGroup(countdown_canvasGroup);
+    }
 
     private void UpdateProgressionUI()
     {
@@ -459,7 +469,8 @@ public class UIManager : MonoBehaviour
             progressionLevelText.text = $"Nivel: {DataManager.instance.GetLevel()}";
 
         if (progressionXpText != null)
-            progressionXpText.text = $"XP: {DataManager.instance.GetXp()} (faltan {DataManager.instance.GetXpToNextLevel()} para el siguiente nivel)";
+            progressionXpText.text =
+                $"XP: {DataManager.instance.GetXp()} (faltan {DataManager.instance.GetXpToNextLevel()} para el siguiente nivel)";
 
         if (progressionPerksText != null)
             progressionPerksText.text = DataManager.instance.GetPerkStateText();
