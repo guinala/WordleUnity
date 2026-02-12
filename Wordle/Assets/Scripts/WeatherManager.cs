@@ -1,5 +1,4 @@
 using System.Collections;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Android;
@@ -53,6 +52,7 @@ public class WeatherManager : MonoBehaviour
         if (!Input.location.isEnabledByUser)
         {
             Debug.Log("El usuario no tiene activada la ubicación");
+            ApplyFallback(hasLocation: false, hasNetwork: Application.internetReachability != NetworkReachability.NotReachable);
             yield break;
         }
 
@@ -68,25 +68,35 @@ public class WeatherManager : MonoBehaviour
         if (maxWait <= 0)
         {
             Debug.Log("Timeout al iniciar GPS");
+            ApplyFallback(hasLocation: false, hasNetwork: Application.internetReachability != NetworkReachability.NotReachable);
             yield break;
         }
 
         if (Input.location.status == LocationServiceStatus.Failed)
         {
             Debug.Log("No se pudo obtener la ubicación");
+            ApplyFallback(hasLocation: false, hasNetwork: Application.internetReachability != NetworkReachability.NotReachable);
             yield break;
         }
         
-        float lat = Input.location.lastData.latitude;
-        float lon = Input.location.lastData.longitude;
+        latitude = Input.location.lastData.latitude;
+        longitude = Input.location.lastData.longitude;
 
-        Debug.Log($"Lat: {lat} Lon: {lon}");
+        Debug.Log($"Lat: {latitude} Lon: {longitude}");
         StartCoroutine(GetWeather());
     }
 
 
     IEnumerator GetWeather()
     {
+        bool hasNetwork = Application.internetReachability != NetworkReachability.NotReachable;
+        if (!hasNetwork)
+        {
+            Debug.Log("Sin red disponible para consultar clima");
+            ApplyFallback(hasLocation: true, hasNetwork: false);
+            yield break;
+        }
+
         string url = $"https://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&units=metric&appid={apiKey}";
         using (UnityWebRequest request = UnityWebRequest.Get(url))
         {
@@ -95,14 +105,40 @@ public class WeatherManager : MonoBehaviour
             if (request.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError("Error al obtener clima: " + request.error);
+                ApplyFallback(hasLocation: true, hasNetwork: false);
             }
             else
             {
                 WeatherResponse weatherData = JsonUtility.FromJson<WeatherResponse>(request.downloadHandler.text);
                 Debug.Log($"Temperatura: {weatherData.main.temp}°C  Condición: {weatherData.weather[0].main}");
-                if(weatherData.weather[0].main == "Rain")
+
+                EnvironmentWeather weather = ParseWeather(weatherData.weather[0].main);
+                TimeBand timeBand = EnvironmentState.GetCurrentLocalTimeBand();
+                EnvironmentState.Instance.SetState(weather, timeBand, hasLocation: true, hasNetwork: true);
+
+                if(weather == EnvironmentWeather.Rain)
                     rainMode.SetActive(true);
+                else
+                    rainMode.SetActive(false);
             }
         }
+    }
+
+    private EnvironmentWeather ParseWeather(string weatherMain)
+    {
+        return weatherMain switch
+        {
+            "Clear" => EnvironmentWeather.Clear,
+            "Rain" => EnvironmentWeather.Rain,
+            "Clouds" => EnvironmentWeather.Clouds,
+            "Snow" => EnvironmentWeather.Snow,
+            _ => EnvironmentWeather.Unknown
+        };
+    }
+
+    private void ApplyFallback(bool hasLocation, bool hasNetwork)
+    {
+        rainMode.SetActive(false);
+        EnvironmentState.Instance.SetState(EnvironmentWeather.Unknown, EnvironmentState.GetCurrentLocalTimeBand(), hasLocation, hasNetwork);
     }
 }
