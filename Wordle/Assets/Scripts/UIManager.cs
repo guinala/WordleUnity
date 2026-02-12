@@ -1,4 +1,5 @@
 using System;
+using Assets.SimpleLocalization.Scripts;
 using TMPro;
 using UnityEngine;
 
@@ -37,6 +38,8 @@ public class UIManager : MonoBehaviour
     [Header("Game Elements")]
     [SerializeField] private TextMeshProUGUI gameScore;
     [SerializeField] private TextMeshProUGUI gameCoins;
+    [SerializeField] private TextMeshProUGUI modifierText;
+    [SerializeField] private TextMeshProUGUI modifierMessageText;
     
     [Header("Loading Elements")]
     [SerializeField] private TextMeshProUGUI loadingText;
@@ -59,18 +62,24 @@ public class UIManager : MonoBehaviour
         HideGameOver();
         GameManager.OnGameStateChanged += GameStateChangedCallback;
         DataManager.OnCoinsChanged += UpdateCoinsTexts;
+        MatchModifierManager.OnActiveModifierChanged += UpdateActiveModifierText;
+        LocalizationManager.OnLocalizationChanged += UpdateActiveModifierText;
     }
 
     private void OnDestroy()
     {
         GameManager.OnGameStateChanged -= GameStateChangedCallback;
         DataManager.OnCoinsChanged -= UpdateCoinsTexts;
+        MatchModifierManager.OnActiveModifierChanged -= UpdateActiveModifierText;
+        LocalizationManager.OnLocalizationChanged -= UpdateActiveModifierText;
     }
 
     private void ShowGame()
     {
         gameScore.text = DataManager.instance.GetScore().ToString();
         gameCoins.text = DataManager.instance.GetCoins().ToString();
+        UpdateActiveModifierText();
+        SetModifierMessage(string.Empty);
         wordsContainer.SetActive(true);
         InputManager.instance.Initialize();
         ShowCanvasGroup(game_canvasGroup);
@@ -179,6 +188,28 @@ public class UIManager : MonoBehaviour
                 HideGame();
                 break;
         }
+    }
+
+    private void UpdateActiveModifierText()
+    {
+        if (modifierText == null)
+            return;
+
+        if (MatchModifierManager.Instance == null)
+        {
+            modifierText.text = LocalizationManager.Localize("Gameplay.Modifier.None");
+            return;
+        }
+
+        modifierText.text = MatchModifierManager.Instance.GetActiveModifierLocalizedText();
+    }
+
+    public void SetModifierMessage(string message)
+    {
+        if (modifierMessageText == null)
+            return;
+
+        modifierMessageText.text = message;
     }
 
     public void UpdateCoinsTexts()
