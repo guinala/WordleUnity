@@ -4,30 +4,39 @@ using UnityEngine;
 
 public class LetterContainer : MonoBehaviour
 {
-    [Header("Elements")] 
+    [Header("Elements")]
     [SerializeField] private TextMeshPro letter;
-
     [SerializeField] private SpriteRenderer letterContainer;
 
-    [Header("Settings")] 
+    [Header("Settings")]
     [SerializeField] private bool animatedColorChange = true;
+
+    private ThemeConfig _theme;
+
+    private void Start()
+    {
+        ThemeManager.OnThemeChanged += ApplyTheme;
+        ApplyTheme(ThemeManager.Instance != null ? ThemeManager.Instance.CurrentTheme : null);
+    }
+
+    private void OnDestroy()
+    {
+        ThemeManager.OnThemeChanged -= ApplyTheme;
+    }
 
     public void Initialize()
     {
+        EnsureTheme();
         letter.text = "";
-        letterContainer.color = Color.white;
+        letterContainer.color = _theme.CellStyle.backgroundDefault;
+        letter.color = _theme.CellStyle.textDefault;
     }
 
-    public void SetLetter(char letter, bool isHint = false)
+    public void SetLetter(char newLetter, bool isHint = false)
     {
-        if (isHint)
-            this.letter.color = Color.gray;
-        else
-        {
-            this.letter.color = Color.black;
-        }
-        
-        this.letter.text = letter.ToString();
+        EnsureTheme();
+        letter.color = isHint ? _theme.CellStyle.textHint : _theme.CellStyle.textDefault;
+        letter.text = newLetter.ToString();
     }
 
     public char GetLetter()
@@ -42,49 +51,77 @@ public class LetterContainer : MonoBehaviour
 
     public void SetValid()
     {
-        if(!animatedColorChange) letterContainer.color = Color.yellowGreen;
-        else
-        {
-            StartCoroutine(ChangeColorRoutine(Color.yellowGreen, 0.5f));
-        }
+        EnsureTheme();
+        ApplyStateColor(_theme.CellStyle.backgroundValid);
     }
 
     public void SetPotential()
     {
-        if(!animatedColorChange) letterContainer.color = Color.yellowNice;
-        else
-        {
-            StartCoroutine(ChangeColorRoutine(Color.yellowNice, 0.5f));
-        }
+        EnsureTheme();
+        ApplyStateColor(_theme.CellStyle.backgroundPotential);
     }
-    
+
     public void SetInvalid()
     {
-        if(!animatedColorChange) letterContainer.color = Color.gray;
-        else
-        {
-            StartCoroutine(ChangeColorRoutine(Color.gray, 0.5f));
-        }
+        EnsureTheme();
+        ApplyStateColor(_theme.CellStyle.backgroundInvalid);
     }
-    
+
+
+    public void Preview(ThemeConfig theme, char previewLetter = 'A')
+    {
+        if (theme == null)
+            return;
+
+        _theme = theme;
+        Initialize();
+        SetLetter(previewLetter);
+        SetPotential();
+    }
+    private void ApplyStateColor(Color targetColor)
+    {
+        if (!animatedColorChange)
+        {
+            letterContainer.color = targetColor;
+            return;
+        }
+
+        StartCoroutine(ChangeColorRoutine(targetColor, 0.5f));
+    }
+
+    private void ApplyTheme(ThemeConfig theme)
+    {
+        _theme = theme;
+        if (_theme == null)
+            return;
+
+        if (string.IsNullOrEmpty(letter.text))
+            letter.color = _theme.CellStyle.textDefault;
+
+        if (letterContainer.color.a <= 0f || letterContainer.color == default)
+            letterContainer.color = _theme.CellStyle.backgroundDefault;
+    }
+
+    private void EnsureTheme()
+    {
+        if (_theme == null)
+            _theme = ThemeManager.Instance != null ? ThemeManager.Instance.CurrentTheme : null;
+    }
+
     private IEnumerator ChangeColorRoutine(Color desiredColor, float duration)
     {
         Color colorInicial = letterContainer.color;
         float tiempoTranscurrido = 0f;
-    
+
         while (tiempoTranscurrido < duration)
         {
             tiempoTranscurrido += Time.deltaTime;
             float porcentaje = tiempoTranscurrido / duration;
-        
-            // Aplica una curva suave (ease in-out)
             float curva = Mathf.SmoothStep(0f, 1f, porcentaje);
-        
             letterContainer.color = Color.Lerp(colorInicial, desiredColor, curva);
-        
             yield return null;
         }
-    
+
         letterContainer.color = desiredColor;
     }
 }
