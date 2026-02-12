@@ -6,6 +6,8 @@ public class AdsController : MonoBehaviour, IUnityAdsInitializationListener, IUn
     public static AdsController Instance;
     public static Action OnRewardedAdCompleted;
 
+    private bool rewardedAdFlowInProgress;
+
     public string androidGameID;
     public string iOSGameID;
     private string selectedGameID;
@@ -25,6 +27,14 @@ public class AdsController : MonoBehaviour, IUnityAdsInitializationListener, IUn
         else
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
 
@@ -64,12 +74,12 @@ public class AdsController : MonoBehaviour, IUnityAdsInitializationListener, IUn
 
     public void OnUnityAdsFailedToLoad(string placementId, UnityAdsLoadError error, string message)
     {
-        
+        rewardedAdFlowInProgress = false;
     }
 
     public void OnUnityAdsShowFailure(string placementId, UnityAdsShowError error, string message)
     {
-        
+        rewardedAdFlowInProgress = false;
     }
 
     public void OnUnityAdsShowStart(string placementId)
@@ -84,14 +94,25 @@ public class AdsController : MonoBehaviour, IUnityAdsInitializationListener, IUn
 
     public void OnUnityAdsShowComplete(string placementId, UnityAdsShowCompletionState showCompletionState)
     {
+        rewardedAdFlowInProgress = false;
+
         if(placementId.Equals(selectedAdvertisementsID) && showCompletionState == UnityAdsShowCompletionState.COMPLETED)
         {
             OnRewardedAdCompleted?.Invoke();
         }
     }
 
-    public void ShowAdvertisement()
+    public bool IsRewardedAdFlowInProgress() => rewardedAdFlowInProgress;
+
+    public bool ShowAdvertisement()
     {
+        if (rewardedAdFlowInProgress)
+        {
+            return false;
+        }
+
+        rewardedAdFlowInProgress = true;
         Advertisement.Load(selectedAdvertisementsID, this);
+        return true;
     }
 }

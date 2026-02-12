@@ -63,6 +63,7 @@ public class HintManager : MonoBehaviour
     private bool shouldReset;
     private PurchaseHintType pendingHintType = PurchaseHintType.None;
     private bool textHintInProgress;
+    private bool waitingForRewardedAd;
 
     private int CurrentKeyboardHintPrice => GetEnvironmentAdjustedPrice(GetKeyboardHintPrice(), HintType.Keyboard);
     private int CurrentLetterHintPrice => GetEnvironmentAdjustedPrice(GetLetterHintPrice(), HintType.Letter);
@@ -123,6 +124,7 @@ public class HintManager : MonoBehaviour
     {
         textHintGiven = false;
         textHintInProgress = false;
+        waitingForRewardedAd = false;
         hintText.text = "";
         letterHintGivenIndices.Clear();
         pendingHintType = PurchaseHintType.None;
@@ -157,7 +159,7 @@ public class HintManager : MonoBehaviour
             letterPriceText.text = CurrentLetterHintPrice.ToString();
 
         if (textHintPriceText != null)
-            textHintPriceText.text = CurrentTextHintPrice.ToString();
+            textHintPriceText.text = "AD";
 
         if (betHintPriceText != null)
             betHintPriceText.text = GetBetHintPrice().ToString();
@@ -189,7 +191,7 @@ public class HintManager : MonoBehaviour
                 break;
             case PurchaseHintType.Text:
                 hintPreviewTitleText.text = "Pista IA";
-                hintPreviewCostText.text = $"Coste: {CurrentTextHintPrice} monedas";
+                hintPreviewCostText.text = "Coste: ver anuncio recompensado";
                 hintPreviewImpactText.text = $"Impacto: -{textHintScorePenalty} score";
                 break;
             case PurchaseHintType.Bet:
@@ -217,7 +219,7 @@ public class HintManager : MonoBehaviour
                 ApplyLetterHint();
                 break;
             case PurchaseHintType.Text:
-                TextHint();
+                RequestRewardedTextHint();
                 break;
             case PurchaseHintType.Bet:
                 ApplyBetHint();
@@ -228,6 +230,37 @@ public class HintManager : MonoBehaviour
     // Backwards-compatible callbacks if old buttons still point to direct methods.
     public void KeyboardHint() => ApplyKeyboardHint();
     public void LetterHint() => ApplyLetterHint();
+
+    // Explicit rewarded flow for IA hint: request ad first, reward callback grants hint without coin cost.
+    public void RequestRewardedTextHint()
+    {
+        SyncRewardedAdState();
+
+        if (textHintGiven || textHintInProgress || waitingForRewardedAd)
+        {
+            return;
+        }
+
+        if (AdsController.Instance == null)
+        {
+            return;
+        }
+
+        waitingForRewardedAd = AdsController.Instance.ShowAdvertisement();
+    }
+
+    private void SyncRewardedAdState()
+    {
+        if (!waitingForRewardedAd || AdsController.Instance == null)
+        {
+            return;
+        }
+
+        if (!AdsController.Instance.IsRewardedAdFlowInProgress())
+        {
+            waitingForRewardedAd = false;
+        }
+    }
 
     private void ApplyKeyboardHint()
     {
@@ -333,6 +366,7 @@ public class HintManager : MonoBehaviour
 
     public void ShowHintPanel()
     {
+        SyncRewardedAdState();
         UIManager.Instance.ShowHintUI();
         RefreshHintPrices();
 
@@ -342,25 +376,25 @@ public class HintManager : MonoBehaviour
             UIManager.Instance.ShowGivenHintPanel();
     }
 
-    public async void TextHint()
+    public void TextHint()
     {
-        await ApplyTextHintInternal(false);
+        RequestRewardedTextHint();
     }
 
     private void OnRewardedAdCompleted()
     {
-        _ = ApplyTextHintInternal(true);
-    }
-
-    private async System.Threading.Tasks.Task ApplyTextHintInternal(bool isRewarded)
-    {
-        if (textHintGiven || textHintInProgress)
+        if (!waitingForRewardedAd)
         {
             return;
         }
 
-        int currentPrice = CurrentTextHintPrice;
-        if (!isRewarded && DataManager.instance.GetCoins() < currentPrice)
+        waitingForRewardedAd = false;
+        _ = GrantRewardedTextHintAsync();
+    }
+
+    private async System.Threading.Tasks.Task GrantRewardedTextHintAsync()
+    {
+        if (textHintGiven || textHintInProgress)
         {
             return;
         }
@@ -374,11 +408,6 @@ public class HintManager : MonoBehaviour
         UIManager.Instance.ShowLoading(false);
         UIManager.Instance.ShowGivenHintPanel();
         hintText.text = hint.Trim();
-
-        if (!isRewarded)
-        {
-            DataManager.instance.RemoveCoins(currentPrice);
-        }
 
         textHintGiven = true;
         DataManager.instance.RegisterHintUsed();
