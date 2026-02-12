@@ -12,6 +12,22 @@ public enum PerkType
 
 public class DataManager : MonoBehaviour
 {
+    [Serializable]
+    private class ChallengeResultData
+    {
+        public string code;
+        public int bestScore;
+        public int bestAttempt;
+        public int gamesPlayed;
+        public int wins;
+    }
+
+    [Serializable]
+    private class ChallengeResultCollection
+    {
+        public List<ChallengeResultData> items = new List<ChallengeResultData>();
+    }
+
     public static DataManager instance;
 
     private const int BaseXpPerLevel = 100;
@@ -43,6 +59,9 @@ public class DataManager : MonoBehaviour
     [Header("Events")]
     public static Action OnCoinsChanged;
     public static Action OnHintUsageChanged;
+
+    private const string ChallengeResultsKey = "ChallengeResults";
+    private readonly Dictionary<string, ChallengeResultData> challengeResults = new Dictionary<string, ChallengeResultData>();
 
     private void Awake()
     {
@@ -88,6 +107,72 @@ public class DataManager : MonoBehaviour
                "- HintDiscount: nivel 2 o usar 5 pistas.\n" +
                "- RevealedLetter: completar 3 palabras.\n" +
                "- ConditionalExtraAttempt: completar 2 rondas perfectas o mejor puntaje >= 12.";
+    }
+
+
+    public void SaveChallengeResult(string code, bool won, int scoreValue, int attempt)
+    {
+        if (string.IsNullOrEmpty(code))
+            return;
+
+        if (!challengeResults.TryGetValue(code, out ChallengeResultData resultData))
+        {
+            resultData = new ChallengeResultData
+            {
+                code = code,
+                bestScore = 0,
+                bestAttempt = 0,
+                gamesPlayed = 0,
+                wins = 0
+            };
+            challengeResults[code] = resultData;
+        }
+
+        resultData.gamesPlayed++;
+
+        if (won)
+        {
+            resultData.wins++;
+            if (scoreValue > resultData.bestScore)
+                resultData.bestScore = scoreValue;
+
+            if (attempt > 0 && (resultData.bestAttempt == 0 || attempt < resultData.bestAttempt))
+                resultData.bestAttempt = attempt;
+        }
+
+        SaveData();
+    }
+
+    public int GetChallengeBestScore(string code)
+    {
+        if (string.IsNullOrEmpty(code) || !challengeResults.TryGetValue(code, out ChallengeResultData resultData))
+            return 0;
+
+        return resultData.bestScore;
+    }
+
+    public int GetChallengeBestAttempt(string code)
+    {
+        if (string.IsNullOrEmpty(code) || !challengeResults.TryGetValue(code, out ChallengeResultData resultData))
+            return 0;
+
+        return resultData.bestAttempt;
+    }
+
+    public int GetChallengeGamesPlayed(string code)
+    {
+        if (string.IsNullOrEmpty(code) || !challengeResults.TryGetValue(code, out ChallengeResultData resultData))
+            return 0;
+
+        return resultData.gamesPlayed;
+    }
+
+    public int GetChallengeWins(string code)
+    {
+        if (string.IsNullOrEmpty(code) || !challengeResults.TryGetValue(code, out ChallengeResultData resultData))
+            return 0;
+
+        return resultData.wins;
     }
 
     public void AddCoins(int amount)
@@ -262,6 +347,24 @@ public class DataManager : MonoBehaviour
         coins = PlayerPrefs.GetInt("Coins", 150);
         bestScore = PlayerPrefs.GetInt("BestScore");
         score = PlayerPrefs.GetInt("Score");
+
+        challengeResults.Clear();
+        string json = PlayerPrefs.GetString(ChallengeResultsKey, string.Empty);
+        if (string.IsNullOrEmpty(json))
+            return;
+
+        ChallengeResultCollection collection = JsonUtility.FromJson<ChallengeResultCollection>(json);
+        if (collection == null || collection.items == null)
+            return;
+
+        for (int i = 0; i < collection.items.Count; i++)
+        {
+            ChallengeResultData item = collection.items[i];
+            if (item == null || string.IsNullOrEmpty(item.code))
+                continue;
+
+            challengeResults[item.code] = item;
+        }
         xp = PlayerPrefs.GetInt("XP");
         level = Mathf.Max(1, PlayerPrefs.GetInt("Level", 1));
         wordsSolved = PlayerPrefs.GetInt("WordsSolved");
@@ -282,6 +385,12 @@ public class DataManager : MonoBehaviour
         PlayerPrefs.SetInt("Coins", coins);
         PlayerPrefs.SetInt("BestScore", bestScore);
         PlayerPrefs.SetInt("Score", score);
+
+        ChallengeResultCollection collection = new ChallengeResultCollection();
+        foreach (ChallengeResultData value in challengeResults.Values)
+            collection.items.Add(value);
+
+        PlayerPrefs.SetString(ChallengeResultsKey, JsonUtility.ToJson(collection));
         PlayerPrefs.SetInt("XP", xp);
         PlayerPrefs.SetInt("Level", level);
         PlayerPrefs.SetInt("WordsSolved", wordsSolved);

@@ -2,6 +2,7 @@ using System;
 using Assets.SimpleLocalization.Scripts;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
@@ -55,6 +56,13 @@ public class UIManager : MonoBehaviour
     [Header("Loading Elements")]
     [SerializeField] private TextMeshProUGUI loadingText;
 
+    [Header("Challenge Elements")]
+    [SerializeField] private TMP_InputField challengeCodeInput;
+    [SerializeField] private TextMeshProUGUI challengeFeedbackText;
+    [SerializeField] private TextMeshProUGUI challengeCodeLabel;
+    [SerializeField] private CanvasGroup challengeRecord_canvasGroup;
+    [SerializeField] private TextMeshProUGUI challengeRecordTitle;
+    [SerializeField] private TextMeshProUGUI challengeRecordStats;
     [Header("Daily Challenge Elements")]
     [SerializeField] private CanvasGroup dailyChallenge_canvasGroup;
     [SerializeField] private TextMeshProUGUI dailyThemeText;
@@ -74,6 +82,7 @@ public class UIManager : MonoBehaviour
         HideGame();
         HideLevelComplete();
         HideGameOver();
+        HideChallengeRecord();
         HideProgression();
         GameManager.OnGameStateChanged += GameStateChangedCallback;
         DataManager.OnCoinsChanged += UpdateCoinsTexts;
@@ -116,6 +125,7 @@ public class UIManager : MonoBehaviour
         levelCompleteScore.text = DataManager.instance.GetScore().ToString();
         levelCompleteSecretWord.text = WordManager.instance.GetSecretWord();
         ShowCanvasGroup(levelComplete_canvasGroup);
+        RefreshChallengeRecordPanel();
     }
 
     private void ShowGameOver()
@@ -124,6 +134,7 @@ public class UIManager : MonoBehaviour
         gameOverBestScore.text = DataManager.instance.GetBestScore().ToString();
         gameOverSecretWord.text = WordManager.instance.GetSecretWord();
         ShowCanvasGroup(gameOver_canvasGroup);
+        RefreshChallengeRecordPanel();
     }
 
     public void ShowLoading(bool hint)
@@ -182,6 +193,98 @@ public class UIManager : MonoBehaviour
         HideCanvasGroup(givenHintPanel_canvasGroup);
     }
 
+
+    public void ExportCurrentChallengeCode()
+    {
+        string code = WordManager.instance.GetCurrentChallengeCode();
+
+        if (string.IsNullOrEmpty(code))
+        {
+            SetChallengeFeedback("No hay reto activo para exportar.", false);
+            return;
+        }
+
+        if (challengeCodeInput != null)
+            challengeCodeInput.text = code;
+
+        if (challengeCodeLabel != null)
+            challengeCodeLabel.text = code;
+
+        GUIUtility.systemCopyBuffer = code;
+        SetChallengeFeedback("Código copiado al portapapeles.", true);
+    }
+
+    public void ImportChallengeCode()
+    {
+        if (challengeCodeInput == null)
+        {
+            SetChallengeFeedback("No hay campo de código configurado.", false);
+            return;
+        }
+
+        string code = challengeCodeInput.text.Trim();
+        if (!WordManager.instance.TryLoadSeedFromCode(code, out string errorMessage))
+        {
+            SetChallengeFeedback(errorMessage, false);
+            return;
+        }
+
+        if (challengeCodeLabel != null)
+            challengeCodeLabel.text = WordManager.instance.GetCurrentChallengeCode();
+
+        SetChallengeFeedback("Reto importado. Partida reconstruida.", true);
+        InputManager.instance.Initialize();
+        GameManager.Instance.SetGameState(GameState.Game);
+        RefreshChallengeRecordPanel();
+    }
+
+    private void SetChallengeFeedback(string message, bool success)
+    {
+        if (challengeFeedbackText == null)
+            return;
+
+        challengeFeedbackText.text = message;
+        challengeFeedbackText.color = success ? Color.green : Color.red;
+    }
+
+    private void RefreshChallengeRecordPanel()
+    {
+        if (challengeRecord_canvasGroup == null)
+            return;
+
+        string code = WordManager.instance.GetCurrentChallengeCode();
+        if (string.IsNullOrEmpty(code))
+        {
+            HideChallengeRecord();
+            return;
+        }
+
+        int bestScore = DataManager.instance.GetChallengeBestScore(code);
+        int bestAttempt = DataManager.instance.GetChallengeBestAttempt(code);
+        int played = DataManager.instance.GetChallengeGamesPlayed(code);
+        int wins = DataManager.instance.GetChallengeWins(code);
+
+        if (challengeRecordTitle != null)
+            challengeRecordTitle.text = "Récord personal del reto";
+
+        if (challengeRecordStats != null)
+        {
+            string attemptText = bestAttempt > 0 ? bestAttempt.ToString() : "-";
+            challengeRecordStats.text = "Partidas: " + played + "\n" +
+                                        "Victorias: " + wins + "\n" +
+                                        "Mejor puntuación: " + bestScore + "\n" +
+                                        "Mejor intento: " + attemptText;
+        }
+
+        ShowCanvasGroup(challengeRecord_canvasGroup);
+    }
+
+    private void HideChallengeRecord()
+    {
+        if (challengeRecord_canvasGroup == null)
+            return;
+
+        HideCanvasGroup(challengeRecord_canvasGroup);
     public void ShowProgression()
     {
         UpdateProgressionUI();
@@ -225,6 +328,7 @@ public class UIManager : MonoBehaviour
                 HideMenu();
                 HideLevelComplete();
                 HideGameOver();
+                HideChallengeRecord();
                 break;
 
             case GameState.LevelComplete:
@@ -294,6 +398,9 @@ public class UIManager : MonoBehaviour
         wordsContainer.SetActive(false);
         ShowCanvasGroup(menu_canvasGroup);
         HideCanvasGroup(keyboard_canvasGroup);
+
+        if (challengeCodeLabel != null)
+            challengeCodeLabel.text = WordManager.instance.GetCurrentChallengeCode();
     }
 
     private void HideMenu()

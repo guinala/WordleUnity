@@ -4,6 +4,20 @@ using Random = UnityEngine.Random;
 
 public class WordManager : MonoBehaviour
 {
+    [Serializable]
+    private class MutatorsData
+    {
+        public bool generateWithAI;
+    }
+
+    [Serializable]
+    private class ChallengeSeedData
+    {
+        public string word;
+        public string language;
+        public MutatorsData mutators;
+    }
+
     public static WordManager instance;
 
     private const string DailyChallengeDateKey = "DailyChallengeDate";
@@ -17,6 +31,9 @@ public class WordManager : MonoBehaviour
 
     [Header("Settings")]
     private bool shouldReset;
+    private string currentChallengeCode;
+    private ChallengeSeedData importedSeed;
+    
 
     private void Awake()
     {
@@ -45,12 +62,95 @@ public class WordManager : MonoBehaviour
     private void ClearWords()
     {
         secretWord = "";
+        currentChallengeCode = string.Empty;
+        importedSeed = null;
         shouldReset = true;
     }
 
     public string GetSecretWord()
     {
         return secretWord.ToUpper();
+    }
+
+    public string GetCurrentChallengeCode()
+    {
+        if (string.IsNullOrEmpty(currentChallengeCode) && !string.IsNullOrEmpty(secretWord))
+            currentChallengeCode = BuildChallengeCode(secretWord.ToUpper());
+
+        return currentChallengeCode;
+    }
+
+    public bool HasImportedSeed()
+    {
+        return importedSeed != null;
+    }
+
+    public bool TryLoadSeedFromCode(string code, out string errorMessage)
+    {
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            errorMessage = "El código está vacío.";
+            return false;
+        }
+
+        try
+        {
+            string json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(code.Trim()));
+            ChallengeSeedData parsedData = JsonUtility.FromJson<ChallengeSeedData>(json);
+
+            if (parsedData == null || string.IsNullOrEmpty(parsedData.word) || parsedData.word.Trim().Length != 5)
+            {
+                errorMessage = "Código inválido.";
+                return false;
+            }
+
+            parsedData.word = parsedData.word.Trim().ToUpper();
+            if (parsedData.mutators == null)
+                parsedData.mutators = new MutatorsData();
+
+            importedSeed = parsedData;
+            secretWord = parsedData.word;
+            currentChallengeCode = BuildChallengeCode(parsedData.word);
+
+            ApplySeedSettings(parsedData);
+            shouldReset = false;
+            return true;
+        }
+        catch (Exception)
+        {
+            errorMessage = "No se pudo leer el código.";
+            return false;
+        }
+    }
+
+    private string BuildChallengeCode(string word)
+    {
+        ChallengeSeedData seedData = new ChallengeSeedData
+        {
+            word = word.ToUpper(),
+            language = PlayerPrefs.GetString("Language", "Spanish"),
+            mutators = new MutatorsData
+            {
+                generateWithAI = generateWithAI
+            }
+        };
+
+        string json = JsonUtility.ToJson(seedData);
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
+    }
+
+    private void ApplySeedSettings(ChallengeSeedData seedData)
+    {
+        if (!string.IsNullOrEmpty(seedData.language))
+        {
+            PlayerPrefs.SetString("Language", seedData.language);
+            if (MultiLanguage.Instance != null)
+                MultiLanguage.Instance.Language(seedData.language);
+        }
+
+        generateWithAI = seedData.mutators.generateWithAI;
     }
 
     private void SetNewSecretWordFromText()
@@ -61,6 +161,7 @@ public class WordManager : MonoBehaviour
         int wordStartIndex = wordIndex * 7;
 
         secretWord = words.Substring(wordStartIndex, 5).ToUpper();
+        currentChallengeCode = BuildChallengeCode(secretWord);
 
         APIManager.instance.ClearDailyHint();
         UIManager.Instance.UpdateDailyChallengeBlock(string.Empty, string.Empty, false);
@@ -78,6 +179,9 @@ public class WordManager : MonoBehaviour
             SetNewSecretWordFromText();
             return;
         }
+        
+        secretWord = word.ToUpper();
+        currentChallengeCode = BuildChallengeCode(secretWord);
 
         secretWord = generatedWord.ToUpper();
         APIManager.instance.ClearDailyHint();
@@ -165,6 +269,22 @@ public class WordManager : MonoBehaviour
 
             case GameState.Game:
                 if (shouldReset)
+                {
+                    if (importedSeed != null)
+                    {
+                        secretWord = importedSeed.word;
+                        currentChallengeCode = BuildChallengeCode(secretWord);
+                        ApplySeedSettings(importedSeed);
+                        importedSeed = null;
+                        shouldReset = false;
+                    }
+                    else if(!generateWithAI)
+                        SetNewSecretWordFromText();
+                    else
+                    {
+                        SetNewSecretWordFromAI();
+                    }
+                }
                     SetDailyFirstWord();
                 break;
 
