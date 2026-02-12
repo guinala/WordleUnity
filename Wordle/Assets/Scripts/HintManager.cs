@@ -5,7 +5,7 @@ using Random = UnityEngine.Random;
 
 public class HintManager : MonoBehaviour
 {
-    private enum HintType
+    private enum PurchaseHintType
     {
         None,
         Keyboard,
@@ -61,12 +61,12 @@ public class HintManager : MonoBehaviour
 
     private readonly List<int> letterHintGivenIndices = new List<int>();
     private bool shouldReset;
-    private HintType pendingHintType = HintType.None;
-    private readonly List<int> letterHintGivenIndices = new List<int>();
+    private PurchaseHintType pendingHintType = PurchaseHintType.None;
+    private bool textHintInProgress;
 
-    private int CurrentKeyboardHintPrice => EnvironmentState.Instance.GetHintPrice(keyboardHintPrice, HintType.Keyboard);
-    private int CurrentLetterHintPrice => EnvironmentState.Instance.GetHintPrice(letterHintPrice, HintType.Letter);
-    private int CurrentTextHintPrice => EnvironmentState.Instance.GetHintPrice(textHintPrice, HintType.Text);
+    private int CurrentKeyboardHintPrice => GetEnvironmentAdjustedPrice(GetKeyboardHintPrice(), HintType.Keyboard);
+    private int CurrentLetterHintPrice => GetEnvironmentAdjustedPrice(GetLetterHintPrice(), HintType.Letter);
+    private int CurrentTextHintPrice => GetEnvironmentAdjustedPrice(GetTextHintPrice(), HintType.Text);
 
     private void Awake()
     {
@@ -76,16 +76,13 @@ public class HintManager : MonoBehaviour
     private void Start()
     {
         RefreshHintPrices();
+        RefreshPurchasePreview(PurchaseHintType.None);
+
         GameManager.OnGameStateChanged += GameStateChangedCallback;
         GameManager.OnGameBackButtonCallback += Clear;
         EnvironmentState.OnEnvironmentChanged += RefreshHintPrices;
-        UpdatePricesUI();
-        RefreshHintPrices();
-        RefreshPurchasePreview(HintType.None);
-        GameManager.OnGameStateChanged += GameStateChangedCallback;
-        GameManager.OnGameBackButtonCallback += Clear;
         DataManager.OnHintUsageChanged += RefreshHintPrices;
-        AdsController.OnRewardedAdCompleted += TextHint;
+        AdsController.OnRewardedAdCompleted += OnRewardedAdCompleted;
     }
 
     private void OnDestroy()
@@ -94,6 +91,7 @@ public class HintManager : MonoBehaviour
         GameManager.OnGameBackButtonCallback -= Clear;
         EnvironmentState.OnEnvironmentChanged -= RefreshHintPrices;
         DataManager.OnHintUsageChanged -= RefreshHintPrices;
+        AdsController.OnRewardedAdCompleted -= OnRewardedAdCompleted;
     }
 
     private void GameStateChangedCallback(GameState gameState)
@@ -106,7 +104,7 @@ public class HintManager : MonoBehaviour
                     ResetLocalHintState();
                     shouldReset = false;
                 }
-                UpdatePricesUI();
+                RefreshHintPrices();
                 break;
 
             case GameState.LevelComplete:
@@ -124,10 +122,12 @@ public class HintManager : MonoBehaviour
     private void ResetLocalHintState()
     {
         textHintGiven = false;
+        textHintInProgress = false;
         hintText.text = "";
         letterHintGivenIndices.Clear();
-        pendingHintType = HintType.None;
-        RefreshPurchasePreview(HintType.None);
+        pendingHintType = PurchaseHintType.None;
+        RefreshPurchasePreview(PurchaseHintType.None);
+        RefreshHintPrices();
     }
 
     private int GetKeyboardHintPrice() => keyboardHintPrice + DataManager.instance.GetKeyboardHintUses() * keyboardHintPriceStep;
@@ -135,29 +135,40 @@ public class HintManager : MonoBehaviour
     private int GetTextHintPrice() => textHintPrice + DataManager.instance.GetTextHintUses() * textHintPriceStep;
     private int GetBetHintPrice() => betHintPrice + DataManager.instance.GetBetHintUses() * betHintPriceStep;
 
+    private int GetEnvironmentAdjustedPrice(int basePrice, HintType hintType)
+    {
+        return EnvironmentState.Instance == null
+            ? basePrice
+            : EnvironmentState.Instance.GetHintPrice(basePrice, hintType);
+    }
+
     private void RefreshHintPrices()
     {
-        int keyboardPrice = CurrentKeyboardHintPrice;
-        if (DataManager.instance.GetCoins() < keyboardPrice)
+        UpdatePricesUI();
+        RefreshPurchasePreview(pendingHintType);
+    }
+
+    private void UpdatePricesUI()
+    {
         if (keyboardPriceText != null)
-            keyboardPriceText.text = GetKeyboardHintPrice().ToString();
+            keyboardPriceText.text = CurrentKeyboardHintPrice.ToString();
 
         if (letterPriceText != null)
-            letterPriceText.text = GetLetterHintPrice().ToString();
+            letterPriceText.text = CurrentLetterHintPrice.ToString();
 
         if (textHintPriceText != null)
-            textHintPriceText.text = GetTextHintPrice().ToString();
+            textHintPriceText.text = CurrentTextHintPrice.ToString();
 
         if (betHintPriceText != null)
             betHintPriceText.text = GetBetHintPrice().ToString();
     }
 
-    public void PreviewKeyboardHint() => RefreshPurchasePreview(HintType.Keyboard);
-    public void PreviewLetterHint() => RefreshPurchasePreview(HintType.Letter);
-    public void PreviewTextHint() => RefreshPurchasePreview(HintType.Text);
-    public void PreviewBetHint() => RefreshPurchasePreview(HintType.Bet);
+    public void PreviewKeyboardHint() => RefreshPurchasePreview(PurchaseHintType.Keyboard);
+    public void PreviewLetterHint() => RefreshPurchasePreview(PurchaseHintType.Letter);
+    public void PreviewTextHint() => RefreshPurchasePreview(PurchaseHintType.Text);
+    public void PreviewBetHint() => RefreshPurchasePreview(PurchaseHintType.Bet);
 
-    private void RefreshPurchasePreview(HintType hintType)
+    private void RefreshPurchasePreview(PurchaseHintType hintType)
     {
         pendingHintType = hintType;
 
@@ -166,25 +177,26 @@ public class HintManager : MonoBehaviour
 
         switch (hintType)
         {
-            case HintType.Keyboard:
+            case PurchaseHintType.Keyboard:
                 hintPreviewTitleText.text = "Pista Teclado";
-                hintPreviewCostText.text = $"Coste: {GetKeyboardHintPrice()} monedas";
+                hintPreviewCostText.text = $"Coste: {CurrentKeyboardHintPrice} monedas";
                 hintPreviewImpactText.text = $"Impacto: -{keyboardHintScorePenalty} score";
                 break;
-            case HintType.Letter:
+            case PurchaseHintType.Letter:
                 hintPreviewTitleText.text = "Pista Letra";
-                hintPreviewCostText.text = $"Coste: {GetLetterHintPrice()} monedas";
+                hintPreviewCostText.text = $"Coste: {CurrentLetterHintPrice} monedas";
                 hintPreviewImpactText.text = $"Impacto: -{letterHintScorePenalty} score";
                 break;
-            case HintType.Text:
+            case PurchaseHintType.Text:
                 hintPreviewTitleText.text = "Pista IA";
-                hintPreviewCostText.text = $"Coste: {GetTextHintPrice()} monedas";
+                hintPreviewCostText.text = $"Coste: {CurrentTextHintPrice} monedas";
                 hintPreviewImpactText.text = $"Impacto: -{textHintScorePenalty} score";
                 break;
-            case HintType.Bet:
+            case PurchaseHintType.Bet:
                 hintPreviewTitleText.text = "Pista Apuesta";
                 hintPreviewCostText.text = $"Coste: {GetBetHintPrice()} monedas";
-                hintPreviewImpactText.text = $"Impacto: {betHintBenefitChance * 100f:0}% +{betHintCoinReward} monedas / {100f - betHintBenefitChance * 100f:0}% -{betHintCoinLoss} monedas";
+                hintPreviewImpactText.text =
+                    $"Impacto: {betHintBenefitChance * 100f:0}% +{betHintCoinReward} monedas / {100f - betHintBenefitChance * 100f:0}% -{betHintCoinLoss} monedas";
                 break;
             default:
                 hintPreviewTitleText.text = "Selecciona una pista";
@@ -196,20 +208,18 @@ public class HintManager : MonoBehaviour
 
     public void ConfirmHintPurchase()
     {
-        int finalPrice = GetFinalPrice(keyboardHintPrice);
-        if (DataManager.instance.GetCoins() < finalPrice)
         switch (pendingHintType)
         {
-            case HintType.Keyboard:
+            case PurchaseHintType.Keyboard:
                 ApplyKeyboardHint();
                 break;
-            case HintType.Letter:
+            case PurchaseHintType.Letter:
                 ApplyLetterHint();
                 break;
-            case HintType.Text:
+            case PurchaseHintType.Text:
                 TextHint();
                 break;
-            case HintType.Bet:
+            case PurchaseHintType.Bet:
                 ApplyBetHint();
                 break;
         }
@@ -221,61 +231,51 @@ public class HintManager : MonoBehaviour
 
     private void ApplyKeyboardHint()
     {
-        int currentPrice = GetKeyboardHintPrice();
+        int currentPrice = CurrentKeyboardHintPrice;
         if (DataManager.instance.GetCoins() < currentPrice)
+        {
             return;
+        }
 
         string secretWord = WordManager.instance.GetSecretWord();
-
-        List<Key> untouchedKeys = new List<Key>();
+        List<Key> invalidUntouchedKeys = new List<Key>();
 
         for (int i = 0; i < keys.Length; i++)
         {
-            if (keys[i].IsUntouched())
-                untouchedKeys.Add(keys[i]);
-        }
+            if (!keys[i].IsUntouched())
+                continue;
 
-        List<Key> t_untouchedKeys = new List<Key>(untouchedKeys);
-        List<Key> invalidUntouchedKeys = new List<Key>(untouchedKeys);
-
-        for (int i = 0; i < untouchedKeys.Count; i++)
-        {
-            if (secretWord.Contains(untouchedKeys[i].GetLetter()))
-                t_untouchedKeys.Remove(untouchedKeys[i]);
-                invalidUntouchedKeys.Remove(untouchedKeys[i]);
+            if (!secretWord.Contains(keys[i].GetLetter()))
+                invalidUntouchedKeys.Add(keys[i]);
         }
 
         if (invalidUntouchedKeys.Count <= 0)
+        {
             return;
+        }
 
-        int randomIndex = Random.Range(0, t_untouchedKeys.Count);
-        t_untouchedKeys[randomIndex].SetInvalid();
-        
-        DataManager.instance.RemoveCoins(keyboardPrice);
-
-        DataManager.instance.RemoveCoins(finalPrice);
-        DataManager.instance.RegisterHintUsed();
-        UpdatePricesUI();
         int randomIndex = Random.Range(0, invalidUntouchedKeys.Count);
         invalidUntouchedKeys[randomIndex].SetInvalid();
 
         DataManager.instance.RemoveCoins(currentPrice);
+        DataManager.instance.RegisterHintUsed();
         DataManager.instance.RegisterKeyboardHintUse(keyboardHintScorePenalty);
-        RefreshPurchasePreview(HintType.Keyboard);
+        RefreshHintPrices();
+        RefreshPurchasePreview(PurchaseHintType.Keyboard);
     }
 
     private void ApplyLetterHint()
     {
-        int letterPrice = CurrentLetterHintPrice;
-        if (DataManager.instance.GetCoins() < letterPrice)
-        int finalPrice = GetFinalPrice(letterHintPrice);
-        if (DataManager.instance.GetCoins() < finalPrice)
-        int currentPrice = GetLetterHintPrice();
+        int currentPrice = CurrentLetterHintPrice;
         if (DataManager.instance.GetCoins() < currentPrice)
+        {
             return;
+        }
 
         if (letterHintGivenIndices.Count >= 5)
+        {
             return;
+        }
 
         List<int> letterHintNotGivenIndices = new List<int>();
 
@@ -285,38 +285,35 @@ public class HintManager : MonoBehaviour
                 letterHintNotGivenIndices.Add(i);
         }
 
+        if (letterHintNotGivenIndices.Count <= 0)
+        {
+            return;
+        }
+
         WordContainer currentWordContainer = InputManager.instance.GetCurrentWordContainer();
         string secretWord = WordManager.instance.GetSecretWord();
 
         int randomIndex = letterHintNotGivenIndices[Random.Range(0, letterHintNotGivenIndices.Count)];
         letterHintGivenIndices.Add(randomIndex);
-
         currentWordContainer.AddAsHint(randomIndex, secretWord[randomIndex]);
-        
-        DataManager.instance.RemoveCoins(letterPrice);
-    }
 
-    private void RefreshHintPrices()
-    {
-        keyboardPriceText.text = CurrentKeyboardHintPrice.ToString();
-        letterPriceText.text = CurrentLetterHintPrice.ToString();
-        textHintPriceText.text = CurrentTextHintPrice.ToString();
-
-        DataManager.instance.RemoveCoins(finalPrice);
-        DataManager.instance.RegisterHintUsed();
-        UpdatePricesUI();
         DataManager.instance.RemoveCoins(currentPrice);
+        DataManager.instance.RegisterHintUsed();
         DataManager.instance.RegisterLetterHintUse(letterHintScorePenalty);
-        RefreshPurchasePreview(HintType.Letter);
+        RefreshHintPrices();
+        RefreshPurchasePreview(PurchaseHintType.Letter);
     }
 
     public void ApplyBetHint()
     {
         int currentPrice = GetBetHintPrice();
         if (DataManager.instance.GetCoins() < currentPrice)
+        {
             return;
+        }
 
         DataManager.instance.RemoveCoins(currentPrice);
+        DataManager.instance.RegisterHintUsed();
         DataManager.instance.RegisterBetHintUse(betHintScorePenalty);
 
         bool winsBet = Random.value <= betHintBenefitChance;
@@ -330,7 +327,8 @@ public class HintManager : MonoBehaviour
             DataManager.instance.RemoveCoins(betHintCoinLoss);
         }
 
-        RefreshPurchasePreview(HintType.Bet);
+        RefreshHintPrices();
+        RefreshPurchasePreview(PurchaseHintType.Bet);
     }
 
     public void ShowHintPanel()
@@ -346,45 +344,47 @@ public class HintManager : MonoBehaviour
 
     public async void TextHint()
     {
-        int textPrice = CurrentTextHintPrice;
-        if (DataManager.instance.GetCoins() < textPrice)
-        int finalPrice = GetFinalPrice(textHintPrice);
-        if (DataManager.instance.GetCoins() < finalPrice)
-        int currentPrice = GetTextHintPrice();
-        if (DataManager.instance.GetCoins() < currentPrice)
-            return;
+        await ApplyTextHintInternal(false);
+    }
 
-        if (textHintGiven)
-            return;
+    private void OnRewardedAdCompleted()
+    {
+        _ = ApplyTextHintInternal(true);
+    }
 
+    private async System.Threading.Tasks.Task ApplyTextHintInternal(bool isRewarded)
+    {
+        if (textHintGiven || textHintInProgress)
+        {
+            return;
+        }
+
+        int currentPrice = CurrentTextHintPrice;
+        if (!isRewarded && DataManager.instance.GetCoins() < currentPrice)
+        {
+            return;
+        }
+
+        textHintInProgress = true;
         UIManager.Instance.HideMainHintPanel();
         UIManager.Instance.ShowLoading(true);
-        string hint = await APIManager.instance.SetAIHint();
-        hint = hint.Trim();
 
+        string hint = await APIManager.instance.SetAIHint();
+
+        UIManager.Instance.ShowLoading(false);
         UIManager.Instance.ShowGivenHintPanel();
-        hintText.text = hint;
-        
-        DataManager.instance.RemoveCoins(textPrice);
+        hintText.text = hint.Trim();
+
+        if (!isRewarded)
+        {
+            DataManager.instance.RemoveCoins(currentPrice);
+        }
 
         textHintGiven = true;
-        DataManager.instance.RemoveCoins(finalPrice);
         DataManager.instance.RegisterHintUsed();
-        UpdatePricesUI();
-    }
-
-    private int GetFinalPrice(int basePrice)
-    {
-        return PerkManager.Instance == null ? basePrice : PerkManager.Instance.GetDiscountedHintPrice(basePrice);
-    }
-
-    private void UpdatePricesUI()
-    {
-        keyboardPriceText.text = GetFinalPrice(keyboardHintPrice).ToString();
-        letterPriceText.text = GetFinalPrice(letterHintPrice).ToString();
-        textHintPriceText.text = GetFinalPrice(textHintPrice).ToString();
-        DataManager.instance.RemoveCoins(currentPrice);
         DataManager.instance.RegisterTextHintUse(textHintScorePenalty);
-        RefreshPurchasePreview(HintType.Text);
+        textHintInProgress = false;
+        RefreshHintPrices();
+        RefreshPurchasePreview(PurchaseHintType.Text);
     }
 }
