@@ -127,6 +127,8 @@ public class InputManager : MonoBehaviour
             if (currentWordContainerIndex >= wordContainers.Length)
             {
                 Debug.Log("Game Over");
+                string challengeCode = WordManager.instance.GetCurrentChallengeCode();
+                DataManager.instance.SaveChallengeResult(challengeCode, false, 0, 0);
                 DataManager.instance.ResetScore();
                 GameManager.Instance.SetGameState(GameState.GameOver);
             }
@@ -139,6 +141,11 @@ public class InputManager : MonoBehaviour
 
     private void SetLevelComplete()
     {
+        string challengeCode = WordManager.instance.GetCurrentChallengeCode();
+        int currentAttempt = currentWordContainerIndex + 1;
+        int scoreToAdd = 6 - currentWordContainerIndex;
+
+        DataManager.instance.SaveChallengeResult(challengeCode, true, scoreToAdd, currentAttempt);
         UpdateData();
         GameManager.Instance.SetGameState(GameState.LevelComplete);
     }
@@ -177,5 +184,10 @@ public class InputManager : MonoBehaviour
     public WordContainer GetCurrentWordContainer()
     {
         return wordContainers[currentWordContainerIndex];
+    }
+
+    public int GetCurrentAttemptNumber()
+    {
+        return currentWordContainerIndex + 1;
     }
 }
