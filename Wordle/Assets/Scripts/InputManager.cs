@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Assets.SimpleLocalization.Scripts;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +12,7 @@ public class InputManager : MonoBehaviour
     [SerializeField] private WordContainer[] wordContainers;
     [SerializeField] private Button tryButton;
     [SerializeField] private KeyboardColorizer keyboardColorizer;
+    [SerializeField] private UIManager uiManager;
 
     [Header("Settings")] 
     private int currentWordContainerIndex;
@@ -89,6 +91,12 @@ public class InputManager : MonoBehaviour
     {
         if (!canAddLetter)
             return;
+
+        if (MatchModifierManager.Instance != null && !MatchModifierManager.Instance.CanUseKey(letter, out string keyFeedback))
+        {
+            ShowModifierFeedback(keyFeedback);
+            return;
+        }
         
         wordContainers[currentWordContainerIndex].Add(letter);
 
@@ -110,6 +118,15 @@ public class InputManager : MonoBehaviour
     private IEnumerator CheckWordRoutine()
     {
         string wordToCheck = wordContainers[currentWordContainerIndex].GetWord();
+
+        if (MatchModifierManager.Instance != null && !MatchModifierManager.Instance.ValidateWordForCurrentTurn(wordToCheck, out string validationFeedback))
+        {
+            ShowModifierFeedback(validationFeedback);
+            canAddLetter = true;
+            DisableTryButton();
+            yield break;
+        }
+
         string secretWord = WordManager.instance.GetSecretWord();
         
         wordContainers[currentWordContainerIndex].Colorize(secretWord);
@@ -124,6 +141,9 @@ public class InputManager : MonoBehaviour
         {
             currentWordContainerIndex++;
             DisableTryButton();
+
+            if (MatchModifierManager.Instance != null)
+                MatchModifierManager.Instance.ConfigureTurn(currentWordContainerIndex);
 
             if (currentWordContainerIndex >= wordContainers.Length)
             {
@@ -150,6 +170,17 @@ public class InputManager : MonoBehaviour
         int hintPenalty = DataManager.instance.GetMatchHintScorePenalty();
         int scoreToAdd = Mathf.Max(0, baseScoreToAdd - hintPenalty);
 
+        int scoreToAdd = 6 - currentWordContainerIndex;
+
+        if (MatchModifierManager.Instance != null)
+        {
+            int bonus = MatchModifierManager.Instance.GetEarlyHitBonus(currentWordContainerIndex);
+            scoreToAdd += bonus;
+
+            if (bonus > 0)
+                ShowModifierFeedback(LocalizationManager.Localize("Gameplay.Modifier.BonusAwarded", bonus));
+        }
+        
         DataManager.instance.IncreaseScore(scoreToAdd);
         DataManager.instance.AddCoins(scoreToAdd * 3);
     }
@@ -165,6 +196,15 @@ public class InputManager : MonoBehaviour
         canAddLetter = true;
         
         onLetterRemoved?.Invoke();
+    }
+
+    private void ShowModifierFeedback(string message)
+    {
+        if (string.IsNullOrEmpty(message))
+            return;
+
+        if (uiManager != null)
+            uiManager.SetModifierMessage(message);
     }
 
     private void EnableTryButton()
