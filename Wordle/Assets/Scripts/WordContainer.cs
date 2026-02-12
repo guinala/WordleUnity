@@ -1,34 +1,36 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class WordContainer : MonoBehaviour
 {
-    [Header("Elements")] 
+    [Header("Elements")]
     private LetterContainer[] _letterContainers;
 
-    [Header("Settings")] private int currentLetterIndex;
+    [Header("Settings")]
+    private bool[] _lockedIndices;
 
     private void Awake()
     {
         _letterContainers = GetComponentsInChildren<LetterContainer>();
-        //Initialize();
+        _lockedIndices = new bool[_letterContainers.Length];
     }
 
     public void Initialize()
     {
-        currentLetterIndex = 0;
-        
         for (int i = 0; i < _letterContainers.Length; i++)
         {
+            _lockedIndices[i] = false;
             _letterContainers[i].Initialize();
         }
     }
 
     public void Add(char letter)
     {
-        _letterContainers[currentLetterIndex].SetLetter(letter);
-        currentLetterIndex++;
+        int targetIndex = GetNextWritableIndex(0);
+        if (targetIndex < 0)
+            return;
+
+        _letterContainers[targetIndex].SetLetter(letter);
     }
 
     public string GetWord()
@@ -42,24 +44,32 @@ public class WordContainer : MonoBehaviour
 
     public void AddAsHint(int letterIndex, char letter)
     {
+        if (letterIndex < 0 || letterIndex >= _letterContainers.Length)
+            return;
+
+        _lockedIndices[letterIndex] = true;
         _letterContainers[letterIndex].SetLetter(letter, true);
     }
 
     public bool RemoveLetter()
     {
-        if (currentLetterIndex <= 0)
-        {
+        int targetIndex = GetPreviousWritableFilledIndex(_letterContainers.Length - 1);
+        if (targetIndex < 0)
             return false;
-        }
 
-        currentLetterIndex--;
-        _letterContainers[currentLetterIndex].Initialize();
+        _letterContainers[targetIndex].Initialize();
         return true;
     }
 
     public bool IsComplete()
     {
-        return currentLetterIndex >= 5;
+        for (int i = 0; i < _letterContainers.Length; i++)
+        {
+            if (_letterContainers[i].IsEmpty())
+                return false;
+        }
+
+        return true;
     }
 
     public void Colorize(string secreWord)
@@ -70,20 +80,48 @@ public class WordContainer : MonoBehaviour
         {
             char letterToCheck = _letterContainers[i].GetLetter();
 
-            if (letterToCheck == secreWord[i]) //Valid case
+            if (letterToCheck == secreWord[i])
             {
                 _letterContainers[i].SetValid();
                 chars.Remove(letterToCheck);
             }
-            else if (chars.Contains(letterToCheck)) //Potential case
+            else if (chars.Contains(letterToCheck))
             {
                 _letterContainers[i].SetPotential();
                 chars.Remove(letterToCheck);
             }
-            else //Failed case
+            else
             {
                 _letterContainers[i].SetInvalid();
             }
         }
+    }
+
+    private int GetNextWritableIndex(int start)
+    {
+        for (int i = start; i < _letterContainers.Length; i++)
+        {
+            if (_lockedIndices[i])
+                continue;
+
+            if (_letterContainers[i].IsEmpty())
+                return i;
+        }
+
+        return -1;
+    }
+
+    private int GetPreviousWritableFilledIndex(int start)
+    {
+        for (int i = start; i >= 0; i--)
+        {
+            if (_lockedIndices[i])
+                continue;
+
+            if (!_letterContainers[i].IsEmpty())
+                return i;
+        }
+
+        return -1;
     }
 }
