@@ -37,6 +37,7 @@ public class UIManager : MonoBehaviour
     [Header("Game Elements")]
     [SerializeField] private TextMeshProUGUI gameScore;
     [SerializeField] private TextMeshProUGUI gameCoins;
+    [SerializeField] private TextMeshProUGUI environmentStatusText;
     
     [Header("Loading Elements")]
     [SerializeField] private TextMeshProUGUI loadingText;
@@ -59,12 +60,15 @@ public class UIManager : MonoBehaviour
         HideGameOver();
         GameManager.OnGameStateChanged += GameStateChangedCallback;
         DataManager.OnCoinsChanged += UpdateCoinsTexts;
+        EnvironmentState.OnEnvironmentChanged += UpdateEnvironmentStatus;
+        UpdateEnvironmentStatus();
     }
 
     private void OnDestroy()
     {
         GameManager.OnGameStateChanged -= GameStateChangedCallback;
         DataManager.OnCoinsChanged -= UpdateCoinsTexts;
+        EnvironmentState.OnEnvironmentChanged -= UpdateEnvironmentStatus;
     }
 
     private void ShowGame()
@@ -179,6 +183,22 @@ public class UIManager : MonoBehaviour
                 HideGame();
                 break;
         }
+    }
+
+    private void UpdateEnvironmentStatus()
+    {
+        if (environmentStatusText == null)
+            return;
+
+        string language = PlayerPrefs.GetString("Language", "Spanish");
+        string fallback = string.Empty;
+
+        if (!EnvironmentState.Instance.HasLocation)
+            fallback = language == "Spanish" ? " (sin ubicación)" : " (no location)";
+        else if (!EnvironmentState.Instance.HasNetwork)
+            fallback = language == "Spanish" ? " (sin red)" : " (offline)";
+
+        environmentStatusText.text = EnvironmentState.Instance.GetHudSummary(language) + fallback;
     }
 
     public void UpdateCoinsTexts()

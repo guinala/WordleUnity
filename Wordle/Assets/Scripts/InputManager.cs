@@ -112,7 +112,8 @@ public class InputManager : MonoBehaviour
         string secretWord = WordManager.instance.GetSecretWord();
         
         wordContainers[currentWordContainerIndex].Colorize(secretWord);
-        yield return new WaitForSeconds(0.6f);
+        float checkDelay = EnvironmentState.Instance.GetWordCheckDelay(0.6f);
+        yield return new WaitForSeconds(checkDelay);
         keyboardColorizer.Colorize(secretWord, wordToCheck);
 
         if (wordToCheck == secretWord)
@@ -146,7 +147,8 @@ public class InputManager : MonoBehaviour
     private void UpdateData()
     {
         int scoreToAdd = 6 - currentWordContainerIndex;
-        
+        scoreToAdd += EnvironmentState.Instance.GetScoreBonus();
+
         DataManager.instance.IncreaseScore(scoreToAdd);
         DataManager.instance.AddCoins(scoreToAdd * 3);
     }
