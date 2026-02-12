@@ -1,23 +1,25 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class InputManager : MonoBehaviour
 {
     public static InputManager instance;
-    
+
     [Header("Elements")]
     [SerializeField] private WordContainer[] wordContainers;
     [SerializeField] private Button tryButton;
     [SerializeField] private KeyboardColorizer keyboardColorizer;
 
-    [Header("Settings")] 
+    [Header("Settings")]
     private int currentWordContainerIndex;
     private bool canAddLetter = true;
     private bool shouldReset;
 
-    [Header("Events")] 
+    [Header("Events")]
     public static Action onLetterAdded;
     public static Action onLetterRemoved;
 
@@ -26,14 +28,11 @@ public class InputManager : MonoBehaviour
         if (instance == null)
             instance = this;
         else
-        {
             Destroy(gameObject);
-        }
     }
 
     private void Start()
     {
-        //Initialize();
         Key.OnKeyPressed += KeyPressedCallback;
         GameManager.OnGameStateChanged += GameStateChangedCallback;
         GameManager.OnGameBackButtonCallback += Clear;
@@ -51,33 +50,30 @@ public class InputManager : MonoBehaviour
         Initialize();
         keyboardColorizer.Initialize();
     }
-    
+
     private void GameStateChangedCallback(GameState gameState)
     {
         switch (gameState)
         {
             case GameState.Game:
-                if(shouldReset)
+                if (shouldReset)
                     Initialize();
                 break;
-            
+
             case GameState.LevelComplete:
-                shouldReset = true;
-                break;
-            
             case GameState.GameOver:
                 shouldReset = true;
                 break;
         }
     }
-    
+
     public void Initialize()
     {
         currentWordContainerIndex = 0;
         canAddLetter = true;
-        
+
         DisableTryButton();
-        
+
         for (int i = 0; i < wordContainers.Length; i++)
             wordContainers[i].Initialize();
 
@@ -88,16 +84,15 @@ public class InputManager : MonoBehaviour
     {
         if (!canAddLetter)
             return;
-        
+
         wordContainers[currentWordContainerIndex].Add(letter);
 
         if (wordContainers[currentWordContainerIndex].IsComplete())
         {
             canAddLetter = false;
             EnableTryButton();
-            //CheckWord();
         }
-        
+
         onLetterAdded?.Invoke();
     }
 
@@ -105,12 +100,12 @@ public class InputManager : MonoBehaviour
     {
         StartCoroutine(CheckWordRoutine());
     }
-    
+
     private IEnumerator CheckWordRoutine()
     {
         string wordToCheck = wordContainers[currentWordContainerIndex].GetWord();
         string secretWord = WordManager.instance.GetSecretWord();
-        
+
         wordContainers[currentWordContainerIndex].Colorize(secretWord);
         yield return new WaitForSeconds(0.6f);
         keyboardColorizer.Colorize(secretWord, wordToCheck);
@@ -126,9 +121,22 @@ public class InputManager : MonoBehaviour
 
             if (currentWordContainerIndex >= wordContainers.Length)
             {
-                Debug.Log("Game Over");
-                DataManager.instance.ResetScore();
-                GameManager.Instance.SetGameState(GameState.GameOver);
+                int exactLetters = GetExactLettersCount(wordToCheck, secretWord);
+                bool extraAttemptGranted = PerkManager.Instance != null &&
+                                           PerkManager.Instance.CanGrantConditionalExtraAttempt(exactLetters);
+
+                if (extraAttemptGranted)
+                {
+                    currentWordContainerIndex = wordContainers.Length - 1;
+                    wordContainers[currentWordContainerIndex].Initialize();
+                    canAddLetter = true;
+                }
+                else
+                {
+                    Debug.Log("Game Over");
+                    DataManager.instance.ResetScore();
+                    GameManager.Instance.SetGameState(GameState.GameOver);
+                }
             }
             else
             {
@@ -146,22 +154,55 @@ public class InputManager : MonoBehaviour
     private void UpdateData()
     {
         int scoreToAdd = 6 - currentWordContainerIndex;
-        
+
         DataManager.instance.IncreaseScore(scoreToAdd);
         DataManager.instance.AddCoins(scoreToAdd * 3);
+        DataManager.instance.AddXp(scoreToAdd * 20);
+        DataManager.instance.RegisterLevelComplete(currentWordContainerIndex == 0);
     }
-    
+
     public void BackspacePressedCallback()
     {
         if (!GameManager.Instance.IsGameState())
             return;
         bool removedLetter = wordContainers[currentWordContainerIndex].RemoveLetter();
-        
-        if(removedLetter)
+
+        if (removedLetter)
             DisableTryButton();
         canAddLetter = true;
-        
+
         onLetterRemoved?.Invoke();
+    }
+
+    public void RevealPerkLetter()
+    {
+        if (wordContainers == null || wordContainers.Length == 0)
+            return;
+
+        string secretWord = WordManager.instance.GetSecretWord();
+        if (string.IsNullOrEmpty(secretWord))
+            return;
+
+        List<int> possibleIndices = new List<int>();
+        for (int i = 0; i < secretWord.Length; i++)
+            possibleIndices.Add(i);
+
+        int selectedIndex = possibleIndices[Random.Range(0, possibleIndices.Count)];
+        wordContainers[0].AddAsHint(selectedIndex, secretWord[selectedIndex]);
+    }
+
+    private int GetExactLettersCount(string wordToCheck, string secretWord)
+    {
+        int exactLetters = 0;
+        int length = Mathf.Min(wordToCheck.Length, secretWord.Length);
+
+        for (int i = 0; i < length; i++)
+        {
+            if (wordToCheck[i] == secretWord[i])
+                exactLetters++;
+        }
+
+        return exactLetters;
     }
 
     private void EnableTryButton()
@@ -173,7 +214,7 @@ public class InputManager : MonoBehaviour
     {
         tryButton.interactable = false;
     }
-    
+
     public WordContainer GetCurrentWordContainer()
     {
         return wordContainers[currentWordContainerIndex];
