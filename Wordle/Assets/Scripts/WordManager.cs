@@ -20,17 +20,21 @@ public class WordManager : MonoBehaviour
 
     public static WordManager instance;
 
-    [Header("Elements")] 
+    private const string DailyChallengeDateKey = "DailyChallengeDate";
+    private const string DailyChallengeJsonKey = "DailyChallengeJson";
+
+    [Header("Elements")]
     [SerializeField] private string secretWord;
     [SerializeField] private TextAsset wordsText;
     [SerializeField] private bool generateWithAI;
     private string words;
 
-    [Header("Settings")] 
+    [Header("Settings")]
     private bool shouldReset;
     private string currentChallengeCode;
     private ChallengeSeedData importedSeed;
     
+
     private void Awake()
     {
         if (instance == null)
@@ -44,12 +48,6 @@ public class WordManager : MonoBehaviour
 
     private void Start()
     {
-        // if(!generateWithAI)
-        //     SetNewSecretWordFromText();
-        // else
-        // {
-        //     SetNewSecretWordFromAI();
-        // }
         GameManager.OnGameStateChanged += GameStateChangedCallback;
         GameManager.OnGameBackButtonCallback += ClearWords;
         shouldReset = true;
@@ -60,7 +58,7 @@ public class WordManager : MonoBehaviour
         GameManager.OnGameStateChanged -= GameStateChangedCallback;
         GameManager.OnGameBackButtonCallback -= ClearWords;
     }
-    
+
     private void ClearWords()
     {
         secretWord = "";
@@ -161,39 +159,114 @@ public class WordManager : MonoBehaviour
 
         int wordIndex = Random.Range(0, wordCount);
         int wordStartIndex = wordIndex * 7;
-        
+
         secretWord = words.Substring(wordStartIndex, 5).ToUpper();
         currentChallengeCode = BuildChallengeCode(secretWord);
 
+        APIManager.instance.ClearDailyHint();
+        UIManager.Instance.UpdateDailyChallengeBlock(string.Empty, string.Empty, false);
         shouldReset = false;
     }
 
     private async void SetNewSecretWordFromAI()
     {
         UIManager.Instance.ShowLoading(false);
-        string word = await APIManager.instance.SetAIWord();
-        word = word.Trim();
-        Debug.Log(word);
-        if(String.IsNullOrEmpty(word) || word.Length != 5)
+        string generatedWord = await APIManager.instance.SetAIWord();
+        generatedWord = generatedWord.Trim();
+
+        if (string.IsNullOrEmpty(generatedWord) || generatedWord.Length != 5)
         {
-            Debug.Log("No vale la pena");
             SetNewSecretWordFromText();
             return;
         }
         
         secretWord = word.ToUpper();
         currentChallengeCode = BuildChallengeCode(secretWord);
+
+        secretWord = generatedWord.ToUpper();
+        APIManager.instance.ClearDailyHint();
+        UIManager.Instance.UpdateDailyChallengeBlock(string.Empty, string.Empty, false);
         shouldReset = false;
+    }
+
+    private async void SetDailyFirstWord()
+    {
+        DailyChallengeData challenge;
+
+        challenge = TryGetStoredDailyChallenge();
+        if (challenge == null)
+            challenge = await TryFetchDailyChallenge();
+
+        if (challenge != null)
+        {
+            ApplyDailyChallenge(challenge);
+            return;
+        }
+
+        if (!generateWithAI)
+            SetNewSecretWordFromText();
+        else
+            SetNewSecretWordFromAI();
+    }
+
+    private void ApplyDailyChallenge(DailyChallengeData challenge)
+    {
+        secretWord = challenge.Word.ToUpper();
+        APIManager.instance.SetCurrentWordAndHint(challenge.Word, challenge.Hint);
+        UIManager.Instance.UpdateDailyChallengeBlock(challenge.Theme, challenge.Rule, true);
+        shouldReset = false;
+    }
+
+    private DailyChallengeData TryGetStoredDailyChallenge()
+    {
+        DailyChallengeData challenge = null;
+        string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        string savedDate = PlayerPrefs.GetString(DailyChallengeDateKey, string.Empty);
+
+        if (savedDate != today)
+            return null;
+
+        string savedJson = PlayerPrefs.GetString(DailyChallengeJsonKey, string.Empty);
+        if (!DailyChallengeParser.TryParse(savedJson, out challenge))
+            return null;
+
+        string language = PlayerPrefs.GetString("Language", "Spanish");
+        return DailyChallengeValidator.IsValid(challenge, language) ? challenge : null;
+    }
+
+    private async System.Threading.Tasks.Task<DailyChallengeData> TryFetchDailyChallenge()
+    {
+        DailyChallengeData challenge = null;
+        UIManager.Instance.ShowLoading(false);
+
+        string response = await APIManager.instance.SetDailyChallenge();
+        if (!DailyChallengeParser.TryParse(response, out challenge))
+            return null;
+
+        string language = PlayerPrefs.GetString("Language", "Spanish");
+        if (!DailyChallengeValidator.IsValid(challenge, language))
+            return null;
+
+        SaveDailyChallenge(response);
+        return challenge;
+    }
+
+    private void SaveDailyChallenge(string jsonResponse)
+    {
+        string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        string cleanJson = DailyChallengeParser.CleanJson(jsonResponse);
+        PlayerPrefs.SetString(DailyChallengeDateKey, today);
+        PlayerPrefs.SetString(DailyChallengeJsonKey, cleanJson);
+        PlayerPrefs.Save();
     }
 
     private void GameStateChangedCallback(GameState gameState)
     {
-        Debug.Log("Cambio de estado en WordManager: " + gameState.ToString());
         switch (gameState)
         {
             case GameState.Menu:
                 break;
-            
+
             case GameState.Game:
                 if (shouldReset)
                 {
@@ -212,12 +285,13 @@ public class WordManager : MonoBehaviour
                         SetNewSecretWordFromAI();
                     }
                 }
+                    SetDailyFirstWord();
                 break;
-            
+
             case GameState.LevelComplete:
                 shouldReset = true;
                 break;
-            
+
             case GameState.GameOver:
                 shouldReset = true;
                 break;
