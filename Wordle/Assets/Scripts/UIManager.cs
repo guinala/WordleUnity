@@ -1,3 +1,5 @@
+using System;
+using Assets.SimpleLocalization.Scripts;
 using TMPro;
 using UnityEngine;
 
@@ -46,6 +48,16 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI progressionXpText;
     [SerializeField] private TextMeshProUGUI progressionPerksText;
     [SerializeField] private TextMeshProUGUI progressionRulesText;
+    [SerializeField] private TextMeshProUGUI modifierText;
+    [SerializeField] private TextMeshProUGUI modifierMessageText;
+    
+    [Header("Loading Elements")]
+    [SerializeField] private TextMeshProUGUI loadingText;
+
+    [Header("Daily Challenge Elements")]
+    [SerializeField] private CanvasGroup dailyChallenge_canvasGroup;
+    [SerializeField] private TextMeshProUGUI dailyThemeText;
+    [SerializeField] private TextMeshProUGUI dailyRuleText;
 
     private void Awake()
     {
@@ -66,6 +78,11 @@ public class UIManager : MonoBehaviour
         DataManager.OnCoinsChanged += UpdateCoinsTexts;
         DataManager.OnProgressionChanged += UpdateProgressionUI;
         UpdateProgressionUI();
+        UpdateDailyChallengeBlock(string.Empty, string.Empty, false);
+        GameManager.OnGameStateChanged += GameStateChangedCallback;
+        DataManager.OnCoinsChanged += UpdateCoinsTexts;
+        MatchModifierManager.OnActiveModifierChanged += UpdateActiveModifierText;
+        LocalizationManager.OnLocalizationChanged += UpdateActiveModifierText;
     }
 
     private void OnDestroy()
@@ -73,12 +90,16 @@ public class UIManager : MonoBehaviour
         GameManager.OnGameStateChanged -= GameStateChangedCallback;
         DataManager.OnCoinsChanged -= UpdateCoinsTexts;
         DataManager.OnProgressionChanged -= UpdateProgressionUI;
+        MatchModifierManager.OnActiveModifierChanged -= UpdateActiveModifierText;
+        LocalizationManager.OnLocalizationChanged -= UpdateActiveModifierText;
     }
 
     private void ShowGame()
     {
         gameScore.text = DataManager.instance.GetScore().ToString();
         gameCoins.text = DataManager.instance.GetCoins().ToString();
+        UpdateActiveModifierText();
+        SetModifierMessage(string.Empty);
         wordsContainer.SetActive(true);
         InputManager.instance.Initialize();
         ShowCanvasGroup(game_canvasGroup);
@@ -168,6 +189,22 @@ public class UIManager : MonoBehaviour
     {
         if (progression_canvasGroup != null)
             HideCanvasGroup(progression_canvasGroup);
+
+    public void UpdateDailyChallengeBlock(string theme, string rule, bool isActive)
+    {
+        if (dailyThemeText != null)
+            dailyThemeText.text = theme;
+
+        if (dailyRuleText != null)
+            dailyRuleText.text = rule;
+
+        if (dailyChallenge_canvasGroup == null)
+            return;
+
+        if (isActive)
+            ShowCanvasGroup(dailyChallenge_canvasGroup);
+        else
+            HideCanvasGroup(dailyChallenge_canvasGroup);
     }
 
     private void GameStateChangedCallback(GameState gameState)
@@ -198,6 +235,28 @@ public class UIManager : MonoBehaviour
         }
 
         UpdateProgressionUI();
+    }
+
+    private void UpdateActiveModifierText()
+    {
+        if (modifierText == null)
+            return;
+
+        if (MatchModifierManager.Instance == null)
+        {
+            modifierText.text = LocalizationManager.Localize("Gameplay.Modifier.None");
+            return;
+        }
+
+        modifierText.text = MatchModifierManager.Instance.GetActiveModifierLocalizedText();
+    }
+
+    public void SetModifierMessage(string message)
+    {
+        if (modifierMessageText == null)
+            return;
+
+        modifierMessageText.text = message;
     }
 
     public void UpdateCoinsTexts()
