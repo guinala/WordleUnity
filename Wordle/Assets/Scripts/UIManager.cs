@@ -40,6 +40,10 @@ public class UIManager : MonoBehaviour
     [Header("Game Elements")]
     [SerializeField] private TextMeshProUGUI gameScore;
     [SerializeField] private TextMeshProUGUI gameCoins;
+    [SerializeField] private CanvasGroup countdown_canvasGroup;
+    [SerializeField] private TextMeshProUGUI countdownText;
+    [SerializeField] private Color countdownNormalColor = Color.white;
+    [SerializeField] private Color countdownCriticalColor = Color.red;
     [SerializeField] private TextMeshProUGUI environmentStatusText;
 
     [Header("Loading Elements")]
@@ -82,6 +86,7 @@ public class UIManager : MonoBehaviour
         HideGame();
         HideLevelComplete();
         HideGameOver();
+        HideCountdownUI();
         HideChallengeRecord();
         HideProgression();
         GameManager.OnGameStateChanged += GameStateChangedCallback;
@@ -117,6 +122,7 @@ public class UIManager : MonoBehaviour
         InputManager.instance.Initialize();
         ShowCanvasGroup(game_canvasGroup);
         ShowCanvasGroup(keyboard_canvasGroup);
+        HideCountdownUI();
     }
 
     private void ShowLevelComplete()
@@ -413,6 +419,7 @@ public class UIManager : MonoBehaviour
         wordsContainer.SetActive(false);
         HideCanvasGroup(keyboard_canvasGroup);
         HideCanvasGroup(game_canvasGroup);
+        HideCountdownUI();
     }
 
     private void HideLevelComplete()
@@ -424,6 +431,24 @@ public class UIManager : MonoBehaviour
     {
         HideCanvasGroup(gameOver_canvasGroup);
     }
+    
+    public void UpdateCountdownUI(float remainingSeconds, bool isCritical)
+    {
+        if (countdownText == null || countdown_canvasGroup == null)
+            return;
+
+        TimeSpan time = TimeSpan.FromSeconds(Mathf.CeilToInt(Mathf.Max(0f, remainingSeconds)));
+        countdownText.text = $"{time.Minutes:00}:{time.Seconds:00}";
+        countdownText.color = isCritical ? countdownCriticalColor : countdownNormalColor;
+        ShowCanvasGroup(countdown_canvasGroup);
+    }
+
+    public void HideCountdownUI()
+    {
+        if (countdown_canvasGroup == null)
+            return;
+
+        HideCanvasGroup(countdown_canvasGroup);
 
     private void UpdateProgressionUI()
     {

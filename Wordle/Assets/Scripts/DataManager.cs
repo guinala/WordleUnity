@@ -36,6 +36,8 @@ public class DataManager : MonoBehaviour
     private int coins;
     private int score;
     private int bestScore;
+    private float bestAttemptTime = float.MaxValue;
+    private float bestMatchTime = float.MaxValue;
     private int xp;
     private int level;
     private int wordsSolved;
@@ -175,6 +177,16 @@ public class DataManager : MonoBehaviour
         return resultData.wins;
     }
 
+    public float GetBestAttemptTime()
+    {
+        return bestAttemptTime;
+    }
+
+    public float GetBestMatchTime()
+    {
+        return bestMatchTime;
+    }
+
     public void AddCoins(int amount)
     {
         coins += amount;
@@ -194,12 +206,31 @@ public class DataManager : MonoBehaviour
     public void IncreaseScore(int amount)
     {
         score += amount;
+        score = Mathf.Max(score, 0);
 
         if (score > bestScore)
             bestScore = score;
 
         SaveData();
         EvaluatePerkUnlocks();
+    }
+
+    public void RegisterAttemptTime(float seconds)
+    {
+        if (seconds <= 0f)
+            return;
+
+        bestAttemptTime = Mathf.Min(bestAttemptTime, seconds);
+        SaveData();
+    }
+
+    public void RegisterMatchTime(float seconds)
+    {
+        if (seconds <= 0f)
+            return;
+
+        bestMatchTime = Mathf.Min(bestMatchTime, seconds);
+        SaveData();
     }
 
     public void ResetScore()
@@ -347,6 +378,8 @@ public class DataManager : MonoBehaviour
         coins = PlayerPrefs.GetInt("Coins", 150);
         bestScore = PlayerPrefs.GetInt("BestScore");
         score = PlayerPrefs.GetInt("Score");
+        bestAttemptTime = PlayerPrefs.GetFloat("BestAttemptTime", float.MaxValue);
+        bestMatchTime = PlayerPrefs.GetFloat("BestMatchTime", float.MaxValue);
 
         challengeResults.Clear();
         string json = PlayerPrefs.GetString(ChallengeResultsKey, string.Empty);
@@ -385,6 +418,8 @@ public class DataManager : MonoBehaviour
         PlayerPrefs.SetInt("Coins", coins);
         PlayerPrefs.SetInt("BestScore", bestScore);
         PlayerPrefs.SetInt("Score", score);
+        PlayerPrefs.SetFloat("BestAttemptTime", bestAttemptTime);
+        PlayerPrefs.SetFloat("BestMatchTime", bestMatchTime);
 
         ChallengeResultCollection collection = new ChallengeResultCollection();
         foreach (ChallengeResultData value in challengeResults.Values)
