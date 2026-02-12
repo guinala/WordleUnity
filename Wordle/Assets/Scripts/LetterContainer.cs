@@ -32,7 +32,12 @@ public class LetterContainer : MonoBehaviour
 
     public char GetLetter()
     {
-        return letter.text[0];
+        return string.IsNullOrEmpty(letter.text) ? ' ' : letter.text[0];
+    }
+
+    public bool IsEmpty()
+    {
+        return string.IsNullOrEmpty(letter.text);
     }
 
     public void SetValid()

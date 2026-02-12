@@ -23,7 +23,11 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         if (Instance == null)
+        {
             Instance = this;
+            if (FindObjectOfType<MatchModifierManager>() == null)
+                gameObject.AddComponent<MatchModifierManager>();
+        }
         else
         {
             Destroy(gameObject);
