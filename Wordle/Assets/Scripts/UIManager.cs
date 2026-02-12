@@ -41,6 +41,11 @@ public class UIManager : MonoBehaviour
     [Header("Loading Elements")]
     [SerializeField] private TextMeshProUGUI loadingText;
 
+    [Header("Daily Challenge Elements")]
+    [SerializeField] private CanvasGroup dailyChallenge_canvasGroup;
+    [SerializeField] private TextMeshProUGUI dailyThemeText;
+    [SerializeField] private TextMeshProUGUI dailyRuleText;
+
     private void Awake()
     {
         if (Instance == null)
@@ -57,6 +62,7 @@ public class UIManager : MonoBehaviour
         HideGame();
         HideLevelComplete();
         HideGameOver();
+        UpdateDailyChallengeBlock(string.Empty, string.Empty, false);
         GameManager.OnGameStateChanged += GameStateChangedCallback;
         DataManager.OnCoinsChanged += UpdateCoinsTexts;
     }
@@ -151,6 +157,24 @@ public class UIManager : MonoBehaviour
     public void HideGivenHintPanel()
     {
         HideCanvasGroup(givenHintPanel_canvasGroup);
+    }
+
+
+    public void UpdateDailyChallengeBlock(string theme, string rule, bool isActive)
+    {
+        if (dailyThemeText != null)
+            dailyThemeText.text = theme;
+
+        if (dailyRuleText != null)
+            dailyRuleText.text = rule;
+
+        if (dailyChallenge_canvasGroup == null)
+            return;
+
+        if (isActive)
+            ShowCanvasGroup(dailyChallenge_canvasGroup);
+        else
+            HideCanvasGroup(dailyChallenge_canvasGroup);
     }
 
     private void GameStateChangedCallback(GameState gameState)
