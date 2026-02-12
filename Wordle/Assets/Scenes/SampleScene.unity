@@ -14272,9 +14272,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 284667563}
-        m_TargetAssemblyTypeName: AdsController, Assembly-CSharp
-        m_MethodName: ShowAdvertisement
+      - m_Target: {fileID: 1628149380}
+        m_TargetAssemblyTypeName: HintManager, Assembly-CSharp
+        m_MethodName: RequestRewardedTextHint
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
