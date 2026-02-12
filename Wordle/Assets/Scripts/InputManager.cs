@@ -75,7 +75,8 @@ public class InputManager : MonoBehaviour
     {
         currentWordContainerIndex = 0;
         canAddLetter = true;
-        
+
+        DataManager.instance.ResetHintUsageForMatch();
         DisableTryButton();
         
         for (int i = 0; i < wordContainers.Length; i++)
@@ -145,8 +146,10 @@ public class InputManager : MonoBehaviour
 
     private void UpdateData()
     {
-        int scoreToAdd = 6 - currentWordContainerIndex;
-        
+        int baseScoreToAdd = 6 - currentWordContainerIndex;
+        int hintPenalty = DataManager.instance.GetMatchHintScorePenalty();
+        int scoreToAdd = Mathf.Max(0, baseScoreToAdd - hintPenalty);
+
         DataManager.instance.IncreaseScore(scoreToAdd);
         DataManager.instance.AddCoins(scoreToAdd * 3);
     }
