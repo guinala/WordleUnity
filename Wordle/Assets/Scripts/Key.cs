@@ -39,6 +39,9 @@ public class Key : MonoBehaviour
     public void Initialize()
     {
         EnsureTheme();
+        if (_theme == null)
+            return;
+
         renderer.color = _theme.KeyboardStyle.keyDefault;
         letterText.color = _theme.KeyboardStyle.textColor;
         _validity = Validity.None;
@@ -52,6 +55,9 @@ public class Key : MonoBehaviour
     public void SetValid()
     {
         EnsureTheme();
+        if (_theme == null)
+            return;
+
         renderer.color = _theme.KeyboardStyle.keyValid;
         _validity = Validity.Valid;
     }
@@ -59,7 +65,7 @@ public class Key : MonoBehaviour
     public void SetPotential()
     {
         EnsureTheme();
-        if (_validity == Validity.Valid)
+        if (_theme == null || _validity == Validity.Valid)
             return;
         renderer.color = _theme.KeyboardStyle.keyPotential;
         _validity = Validity.Potential;
@@ -68,7 +74,7 @@ public class Key : MonoBehaviour
     public void SetInvalid()
     {
         EnsureTheme();
-        if (_validity == Validity.Valid || _validity == Validity.Potential)
+        if (_theme == null || _validity == Validity.Valid || _validity == Validity.Potential)
             return;
         renderer.color = _theme.KeyboardStyle.keyInvalid;
         _validity = Validity.Invalid;

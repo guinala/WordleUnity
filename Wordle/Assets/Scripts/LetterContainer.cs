@@ -27,6 +27,9 @@ public class LetterContainer : MonoBehaviour
     public void Initialize()
     {
         EnsureTheme();
+        if (_theme == null)
+            return;
+
         letter.text = "";
         letterContainer.color = _theme.CellStyle.backgroundDefault;
         letter.color = _theme.CellStyle.textDefault;
@@ -35,6 +38,9 @@ public class LetterContainer : MonoBehaviour
     public void SetLetter(char newLetter, bool isHint = false)
     {
         EnsureTheme();
+        if (_theme == null)
+            return;
+
         letter.color = isHint ? _theme.CellStyle.textHint : _theme.CellStyle.textDefault;
         letter.text = newLetter.ToString();
     }
@@ -52,18 +58,27 @@ public class LetterContainer : MonoBehaviour
     public void SetValid()
     {
         EnsureTheme();
+        if (_theme == null)
+            return;
+
         ApplyStateColor(_theme.CellStyle.backgroundValid);
     }
 
     public void SetPotential()
     {
         EnsureTheme();
+        if (_theme == null)
+            return;
+
         ApplyStateColor(_theme.CellStyle.backgroundPotential);
     }
 
     public void SetInvalid()
     {
         EnsureTheme();
+        if (_theme == null)
+            return;
+
         ApplyStateColor(_theme.CellStyle.backgroundInvalid);
     }
 

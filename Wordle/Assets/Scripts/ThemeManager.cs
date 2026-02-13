@@ -3,7 +3,18 @@ using UnityEngine;
 
 public class ThemeManager : MonoBehaviour
 {
-    public static ThemeManager Instance;
+    private static ThemeManager _instance;
+
+    public static ThemeManager Instance
+    {
+        get
+        {
+            if (_instance == null)
+                _instance = FindFirstObjectByType<ThemeManager>();
+
+            return _instance;
+        }
+    }
 
     [SerializeField] private ThemeConfig fallbackTheme;
     private ThemeConfig _currentTheme;
@@ -14,9 +25,9 @@ public class ThemeManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
+        if (_instance == null)
         {
-            Instance = this;
+            _instance = this;
         }
         else
         {

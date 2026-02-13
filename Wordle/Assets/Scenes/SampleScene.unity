@@ -17420,6 +17420,17 @@ MonoBehaviour:
   sfxVolumeSlider: {fileID: 405536730}
   currentBackgroundType: {fileID: 2111214921}
   currentLanguage: {fileID: 822790536}
+  themeManager: {fileID: 1508316061}
+  currentTheme: {fileID: 822790536}
+  themeOptions:
+  - theme: {fileID: 11400000, guid: b18aca6c8f3642da8b102202308f6119, type: 2}
+    coinCost: 0
+    requiredBestScore: 0
+    requiredAchievement: 
+  previewCell: {fileID: 3302536016287308922, guid: ce1a627feaf36f546aaaee34238a563a, type: 3}
+  previewKey: {fileID: 2205242553937664192, guid: f307e8feeb283f740921da67de0a1740, type: 3}
+  themeNameText: {fileID: 70281065}
+  unlockStateText: {fileID: 302484767}
 --- !u!4 &1508316060
 Transform:
   m_ObjectHideFlags: 0
@@ -17430,6 +17441,51 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 504.9887, y: 919.14575, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1508316061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1508316062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cd99014903c407db8ce32d4ab1d9cad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeManager
+  fallbackTheme: {fileID: 11400000, guid: b18aca6c8f3642da8b102202308f6119, type: 2}
+--- !u!1 &1508316062
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1508316063}
+  - component: {fileID: 1508316061}
+  m_Layer: 0
+  m_Name: Theme Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1508316063
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1508316062}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 506, y: 925, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

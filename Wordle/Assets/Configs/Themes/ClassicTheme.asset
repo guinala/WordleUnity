@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da2cf6b08804a088a28ea301d79cba9, type: 3}
+  m_Name: ClassicTheme
+  m_EditorClassIdentifier: 
+  themeId: classic
+  displayName: Classic
+  cellTheme:
+    backgroundDefault: {r: 1, g: 1, b: 1, a: 1}
+    backgroundValid: {r: 0.41, g: 0.71, b: 0.31, a: 1}
+    backgroundPotential: {r: 0.79, g: 0.67, b: 0.2, a: 1}
+    backgroundInvalid: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    textDefault: {r: 0, g: 0, b: 0, a: 1}
+    textHint: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  keyboardTheme:
+    keyDefault: {r: 1, g: 1, b: 1, a: 1}
+    keyValid: {r: 0.41, g: 0.71, b: 0.31, a: 1}
+    keyPotential: {r: 0.79, g: 0.67, b: 0.2, a: 1}
+    keyInvalid: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    textColor: {r: 0, g: 0, b: 0, a: 1}
