@@ -95,7 +95,7 @@ public class LetterContainer : MonoBehaviour
     }
     private void ApplyStateColor(Color targetColor)
     {
-        if (!animatedColorChange)
+        if (!animatedColorChange || !isActiveAndEnabled)
         {
             letterContainer.color = targetColor;
             return;
