@@ -201,6 +201,9 @@ public class InputManager : MonoBehaviour
                 DataManager.instance.ResetScore();
                 GameManager.Instance.SetGameState(GameState.GameOver);
                 int exactLetters = GetExactLettersCount(wordToCheck, secretWord);
+                if (PerkManager.Instance == null)
+                    Debug.LogWarning("PerkManager.Instance is null. Conditional extra attempt perk cannot be evaluated.");
+
                 bool extraAttemptGranted = PerkManager.Instance != null &&
                                            PerkManager.Instance.CanGrantConditionalExtraAttempt(exactLetters);
 
@@ -354,6 +357,12 @@ public class InputManager : MonoBehaviour
 
     public void RevealPerkLetter()
     {
+        if (PerkManager.Instance == null)
+        {
+            Debug.LogWarning("PerkManager.Instance is null. RevealPerkLetter was ignored.");
+            return;
+        }
+
         if (wordContainers == null || wordContainers.Length == 0)
             return;
 

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class PerkManager : MonoBehaviour
 {
@@ -21,12 +22,23 @@ public class PerkManager : MonoBehaviour
 
     private void Start()
     {
-        GameManager.OnGameStateChanged += OnGameStateChanged;
+        StartCoroutine(WaitForManagersAndSubscribe());
     }
 
     private void OnDestroy()
     {
         GameManager.OnGameStateChanged -= OnGameStateChanged;
+    }
+
+    private IEnumerator WaitForManagersAndSubscribe()
+    {
+        while (DataManager.instance == null || GameManager.Instance == null)
+            yield return null;
+
+        GameManager.OnGameStateChanged += OnGameStateChanged;
+
+        if (GameManager.Instance.IsGameState())
+            OnGameStateChanged(GameState.Game);
     }
 
     public int GetDiscountedHintPrice(int basePrice)
@@ -67,6 +79,9 @@ public class PerkManager : MonoBehaviour
     private void ApplyRoundStartPerks()
     {
         if (revealLetterApplied)
+            return;
+
+        if (DataManager.instance == null)
             return;
 
         if (!DataManager.instance.IsPerkEquipped(PerkType.RevealedLetter))
