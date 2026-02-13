@@ -244,16 +244,13 @@ public class InputManager : MonoBehaviour
 
     private void UpdateData()
     {
-        int baseScore = 6 - currentWordContainerIndex;
-        float speedFactor = 1f + GetCurrentSpeedFactor();
-        int scoreToAdd = Mathf.Max(1, Mathf.RoundToInt(baseScore * speedFactor));
         int baseScoreToAdd = 6 - currentWordContainerIndex;
+        float speedFactor = 1f + GetCurrentSpeedFactor();
+        int scoreToAdd = Mathf.Max(1, Mathf.RoundToInt(baseScoreToAdd * speedFactor));
         int hintPenalty = DataManager.instance.GetMatchHintScorePenalty();
-        int scoreToAdd = Mathf.Max(0, baseScoreToAdd - hintPenalty);
-
-        int scoreToAdd = 6 - currentWordContainerIndex;
+        
+        scoreToAdd = Mathf.Max(0, scoreToAdd - hintPenalty);
         scoreToAdd += EnvironmentState.Instance.GetScoreBonus();
-
 
         if (MatchModifierManager.Instance != null)
         {

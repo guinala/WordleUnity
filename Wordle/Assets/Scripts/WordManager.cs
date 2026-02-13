@@ -180,10 +180,8 @@ public class WordManager : MonoBehaviour
             return;
         }
         
-        secretWord = word.ToUpper();
-        currentChallengeCode = BuildChallengeCode(secretWord);
-
         secretWord = generatedWord.ToUpper();
+        currentChallengeCode = BuildChallengeCode(secretWord);
         APIManager.instance.ClearDailyHint();
         UIManager.Instance.UpdateDailyChallengeBlock(string.Empty, string.Empty, false);
         shouldReset = false;
